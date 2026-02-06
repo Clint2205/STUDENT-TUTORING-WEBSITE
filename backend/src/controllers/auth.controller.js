@@ -32,6 +32,7 @@ export const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       role,
+      isApproved: role === "admin" // admin auto-approved
     });
 
     res.status(201).json({
@@ -53,16 +54,26 @@ export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // 1️⃣ Find user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    // 2️⃣ Approval check (BLOCKS non-admin users)
+    if (!user.isApproved && user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Account pending admin approval" });
+    }
+
+    // 3️⃣ Password check
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    // 4️⃣ Success
     res.json({
       _id: user._id,
       name: user.name,
@@ -70,7 +81,40 @@ export const loginUser = async (req, res) => {
       role: user.role,
       token: generateToken(user._id),
     });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Server error" });
   }
+};
+
+
+// GET all unapproved users
+export const getPendingUsers = async (req, res) => {
+  const users = await User.find({
+    isApproved: false,
+    role: { $ne: "admin" }
+  }).select("-password");
+
+  res.json(users);
+};
+
+// APPROVE user
+export const approveUser = async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  user.isApproved = true;
+  await user.save();
+
+  res.json({ message: "User approved" });
+};
+
+// REJECT user
+export const rejectUser = async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  await user.deleteOne();
+  res.json({ message: "User rejected & removed" });
 };

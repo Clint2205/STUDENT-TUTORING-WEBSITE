@@ -8,13 +8,15 @@
 
     <h1>{{ isRegister ? "Register" : "Login" }}</h1>
 
-    <form @submit.prevent="handleSubmit">
+    <form @submit.prevent="handleSubmit" autocomplete="on">
       <input
         type="email"
         v-model="form.email"
         placeholder="Email"
         required
         :disabled="loading"
+        autocomplete="email"
+        inputmode="email"
       />
 
       <input
@@ -23,6 +25,7 @@
         placeholder="Password"
         required
         :disabled="loading"
+        :autocomplete="isRegister ? 'new-password' : 'current-password'"
       />
 
       <input
@@ -32,6 +35,7 @@
         placeholder="Full Name"
         required
         :disabled="loading"
+        autocomplete="name"
       />
 
       <select
@@ -39,6 +43,7 @@
         v-model="form.role"
         required
         :disabled="loading"
+        autocomplete="off"
       >
         <option disabled value="">Select Role</option>
         <option value="parent">Parent</option>
@@ -78,6 +83,19 @@ export default {
   },
 
   async created() {
+    // ✅ Show logout reason (set by router guard)
+    const reason = localStorage.getItem("logoutReason");
+    if (reason) {
+      localStorage.removeItem("logoutReason");
+      this.showMessage(
+        reason === "idle"
+          ? "You were logged out due to inactivity. Please log in again."
+          : "You have been logged out. Please log in again.",
+        "error"
+      );
+    }
+
+    // Check if admin exists (for admin option)
     try {
       const res = await axios.get("http://localhost:5000/api/admin/check");
       this.adminExists = res.data.adminExists;
@@ -96,14 +114,15 @@ export default {
           // ✅ Register user but DO NOT auto-login
           await register(this.form);
 
-          this.showMessage("Registration successful! Please log in 🎉", "success");
+          this.showMessage(
+            "Registration successful! Please wait for admin approval via email.",
+            "success"
+          );
 
-          // Reset form but keep login mode
+          // Back to login form + reset inputs
           this.isRegister = false;
-          this.form.password = "";
-          this.form.email = "";
-          this.form.name = "";
-          this.form.role = "";
+          this.form = { name: "", email: "", password: "", role: "" };
+
         } else {
           // ✅ Login flow
           const response = await login({
@@ -126,6 +145,9 @@ export default {
               role: response.data.role
             })
           );
+
+          // Set last activity timestamp for 1-min timeout rule
+          localStorage.setItem("lastActiveAt", String(Date.now()));
 
           this.showMessage("Login successful ✅", "success");
 

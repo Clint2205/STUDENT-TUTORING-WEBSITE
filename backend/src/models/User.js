@@ -24,6 +24,12 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "tutor", "parent", "student"],
       default: "student",
     },
+     isApproved: { type: Boolean, default: false }, //  only admin-approved users can login
+     approvedAt: {
+    type: Date,
+    default: null
+  }
+
   },
   { timestamps: true }
 );
