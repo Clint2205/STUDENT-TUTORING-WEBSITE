@@ -1,3 +1,5 @@
+// src/middleware/auth.middleware.js
+
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
@@ -41,3 +43,19 @@ export const adminOnly = (req, res, next) => {
   }
   next();
 };
+
+export const requireAuth = (req, res, next) => {
+  if (!req.user) return res.status(401).json({ message: "Not authenticated" })
+  next()
+}
+
+export const requireRole = (...roles) => {
+  return (req, res, next) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" })
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Forbidden" })
+    }
+    next()
+  }
+}
+

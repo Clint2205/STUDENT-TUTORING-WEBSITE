@@ -1,8 +1,11 @@
+// src/app.js
+
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
 import cors from "cors";
-
+import path from "path";
+import tutorRoutes from "./routes/tutorroutes.js"
 import mongoose from "mongoose";
 import authRoutes from "./routes/auth.routes.js";
 import protectedRoutes from "./routes/protected.routes.js";
@@ -30,6 +33,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/protected", protectedRoutes);
 app.use("/api/admin", adminCheckRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+app.use("/api/tutor", tutorRoutes)
+
 
 const PORT = process.env.PORT || 5000;
 

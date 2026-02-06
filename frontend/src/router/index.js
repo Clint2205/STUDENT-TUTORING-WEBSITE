@@ -24,7 +24,7 @@ const router = createRouter({
   routes
 });
 
-const SESSION_TIMEOUT_MS = 60 * 1000; // 1 minute (change to 3 * 60 * 1000 for 3 mins)
+const SESSION_TIMEOUT_MS = 10 * 60 * 1000; // 1 minute (change to 3 * 60 * 1000 for 3 mins)
 
 function safeParseUser() {
   try {

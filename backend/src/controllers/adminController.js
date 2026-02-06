@@ -1,5 +1,6 @@
 import User from "../models/User.js";
 import { sendEmail } from "../utils/sendEmail.js";
+import Resource from "../models/Resource.js";
 
 // GET all unapproved users
 export const getPendingUsers = async (req, res) => {
@@ -36,7 +37,25 @@ export const approveUser = async (req, res) => {
     `
   });
 
+
   res.json({ message: "User approved and notified" });
+};
+
+// GET all approved users (for Users tab)
+export const getApprovedUsers = async (req, res) => {
+  try {
+    const users = await User.find({
+      isApproved: true
+    })
+      .select("-password")
+      .sort({ createdAt: -1 });
+
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+
+  
 };
 
 // REJECT user
@@ -56,4 +75,103 @@ await sendEmail({
 
   await user.deleteOne();
   res.json({ message: "User rejected & removed" });
+};
+
+// GET /api/admin/resources
+export const getResources = async (req, res) => {
+  try {
+   const resources = await Resource.find()
+  .populate("assignedTo", "name email role")
+  .sort({ createdAt: -1 });
+
+    res.json(resources);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// POST /api/admin/resources
+export const createResource = async (req, res) => {
+  try {
+    const { title, type, url, notes, audienceRole, assignedTo } = req.body;
+
+
+    const resource = await Resource.create({
+    title,
+    type,
+    url: url || "",
+    notes: notes || "",
+    audienceRole: audienceRole || "all",
+    assignedTo: Array.isArray(assignedTo) ? assignedTo : [],
+    createdBy: req.user._id
+  });
+
+
+    const populated = await Resource.findById(resource._id).populate("assignedTo", "name email role");
+    res.status(201).json(populated);
+
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+// DELETE /api/admin/resources/:id
+export const deleteResource = async (req, res) => {
+  try {
+    const resource = await Resource.findById(req.params.id);
+    if (!resource) return res.status(404).json({ message: "Resource not found" });
+
+    await resource.deleteOne();
+    res.json({ message: "Resource deleted" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// POST /api/admin/resources/upload (multipart/form-data)
+export const createResourceWithUpload = async (req, res) => {
+  try {
+    const { title, type, url, notes, audienceRole, assignedTo } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // assignedTo arrives as JSON string from FormData
+    let parsedAssignedTo = [];
+    if (assignedTo) {
+      try {
+        const parsed = JSON.parse(assignedTo);
+        if (Array.isArray(parsed)) parsedAssignedTo = parsed;
+      } catch {}
+    }
+
+    const resource = await Resource.create({
+      title,
+      type,
+      url: url || "",
+      notes: notes || "",
+      audienceRole: audienceRole || "all",
+      assignedTo: parsedAssignedTo,
+      createdBy: req.user._id,
+
+      file: {
+        originalName: req.file.originalname,
+        filename: req.file.filename,
+        url: `/uploads/resources/${req.file.filename}`,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      }
+    });
+
+    const populated = await Resource.findById(resource._id).populate(
+      "assignedTo",
+      "name email role"
+    );
+
+    res.status(201).json(populated);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: err.message });
+  }
 };
