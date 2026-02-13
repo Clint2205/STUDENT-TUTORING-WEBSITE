@@ -6,7 +6,7 @@ import Resource from "../models/Resource.js"
 // GET /api/tutor/students
 export const getMyStudents = async (req, res) => {
   try {
-    const students = await User.find({ role: "student", tutorId: req.user._id })
+    const students = await User.find({ role: "student", tutorIds: req.user._id })
       .select("_id name email")
       .sort({ name: 1 })
 
@@ -20,23 +20,35 @@ export const getMyStudents = async (req, res) => {
 // GET /api/tutor/resources
 export const getMyResources = async (req, res) => {
   try {
-    const myStudents = await User.find({ role: "student", tutorId: req.user._id }).select("_id")
-    const myStudentIds = myStudents.map((s) => s._id)
+    const myStudents = await User.find({ role: "student", tutorIds: req.user._id }).select("_id");
+    const myStudentIds = myStudents.map(s => s._id);
+
+    const adminUsers = await User.find({ role: "admin" }).select("_id").lean();
+    const adminIds = adminUsers.map(u => u._id);
 
     const resources = await Resource.find({
       $or: [
+        // tutor's own resources
         { createdBy: req.user._id },
-        { assignedTo: { $in: myStudentIds } },
-        { audienceRole: "all" }
-      ]
-    }).sort({ createdAt: -1 })
 
-    return res.json(resources)
+        // admin global resources (optional)
+        { createdBy: { $in: adminIds }, audienceRole: "all" },
+
+        // resources assigned to tutor's students (only tutor/admin should be creating those)
+        { assignedTo: { $in: myStudentIds }, createdBy: { $in: [req.user._id, ...adminIds] } }
+      ]
+    })
+      .sort({ createdAt: -1 })
+      .populate("createdBy", "_id name role")
+      .lean();
+
+    return res.json(resources);
   } catch (err) {
-    console.error("getMyResources error:", err)
-    return res.status(500).json({ message: err.message })
+    console.error("getMyResources error:", err);
+    return res.status(500).json({ message: err.message });
   }
-}
+};
+
 
 // POST /api/tutor/resources
 export const createTutorResource = async (req, res) => {
@@ -58,7 +70,7 @@ export const createTutorResource = async (req, res) => {
     const count = await User.countDocuments({
       _id: { $in: assignedTo },
       role: "student",
-      tutorId: req.user._id
+      tutorIds: req.user._id
     })
 
     if (assignedTo.length && count !== assignedTo.length) {
@@ -100,7 +112,7 @@ export const uploadTutorResource = async (req, res) => {
     const count = await User.countDocuments({
       _id: { $in: assignedArray },
       role: "student",
-      tutorId: req.user._id
+      tutorIds: req.user._id
     })
 
     if (assignedArray.length && count !== assignedArray.length) {

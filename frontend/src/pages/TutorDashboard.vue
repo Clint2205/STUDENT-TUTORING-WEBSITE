@@ -1,4 +1,4 @@
-//src/pages/TutorDashboard.vue
+<!-- src/pages/TutorDashboard.vue -->
 
 <template>
   <DashboardLayout>
@@ -6,12 +6,22 @@
       <TutNav :activeTab="activeTab" />
     </template>
 
+    <!-- ✅ Single welcome heading -->
+    <div class="headerRow">
+      <h1 class="pageTitle">
+        <span v-if="me">{{ greeting }}, {{ me.name }} 👋</span>
+        <span v-else>Welcome 👋</span>
+      </h1>
+
+      <button class="logoutBtn" @click="logout">
+        Logout
+      </button>
+    </div>
+
     <!-- STATUS MESSAGE BANNER (like AdminDashboard) -->
     <div v-if="message.text" :class="['message', message.type]">
       {{ message.text }}
     </div>
-
-    <h1>Tutor Dashboard</h1>
 
     <!-- DASHBOARD TAB -->
     <section v-if="activeTab === 'dashboard'" class="card">
@@ -57,101 +67,126 @@
     </section>
 
     <!-- RESOURCES TAB -->
-   <!-- RESOURCES TAB -->
-<section v-if="activeTab === 'resources'" class="card">
-  <h2>Resources</h2>
+    <section v-if="activeTab === 'resources'" class="card">
+      <h2>Resources</h2>
 
-  <div class="formGrid">
-    <input v-model="resourceForm.title" class="input" placeholder="Title (required)" />
+      <div class="formGrid">
+        <input v-model="resourceForm.title" class="input" placeholder="Title (required)" />
 
-    <select v-model="resourceForm.type" class="input">
-      <option value="tutorial">Tutorial</option>
-      <option value="youtube">YouTube</option>
-      <option value="lesson-plan">Lesson plan</option>
-      <option value="assignment">Assignment</option>
-      <option value="study">Study</option>
-      <option value="meeting">Meeting</option>
-      <option value="reminder">Reminder</option>
-      <option value="fun">Fun</option>
-    </select>
+        <select v-model="resourceForm.type" class="input">
+          <option value="tutorial">Tutorial</option>
+          <option value="youtube">YouTube</option>
+          <option value="lesson-plan">Lesson plan</option>
+          <option value="assignment">Assignment</option>
+          <option value="study">Study</option>
+          <option value="meeting">Meeting</option>
+          <option value="reminder">Reminder</option>
+          <option value="fun">Fun</option>
+        </select>
 
-    <select v-model="resourceForm.audienceRole" class="input">
-      <option value="student">Students</option>
-      <option value="all">All</option>
-      <option value="parent">Parents</option>
-      <option value="tutor">Tutors</option>
-    </select>
+        <select v-model="resourceForm.audienceRole" class="input">
+          <option value="student">Students</option>
+          <option value="all">All</option>
+          <option value="parent">Parents</option>
+          <option value="tutor">Tutors</option>
+        </select>
 
-    <input v-model="resourceForm.url" class="input" placeholder="Link URL (optional)" />
+        <input v-model="resourceForm.url" class="input" placeholder="Link URL (optional)" />
 
-    <input type="file" class="input" ref="fileInput" @change="onFileChange" />
+        <input type="file" class="input" ref="fileInput" @change="onFileChange" />
 
-    <div class="assignBox">
-      <div class="muted">Assign to students (optional)</div>
+        <div class="assignBox">
+          <div class="muted">Assign to students (optional)</div>
 
-      <select v-model="resourceForm.assignedTo" multiple class="input multi">
-        <option v-for="s in students" :key="s._id" :value="s._id">
-          {{ s.name || s.email }}
-        </option>
-      </select>
+          <select v-model="resourceForm.assignedTo" multiple class="input multi">
+            <option v-for="s in students" :key="s._id" :value="s._id">
+              {{ s.name || s.email }}
+            </option>
+          </select>
 
-      <div v-if="selectedStudent" class="muted small">
-        Quick add selected student:
-        <button class="linkBtn" @click="quickAssignSelected">Add</button>
-      </div>
-    </div>
-
-    <div style="display:flex; gap: 10px; flex-wrap: wrap;">
-      <button class="btn" @click="createResource" :disabled="creatingResource">
-        {{ creatingResource ? "Creating..." : "Create Link Resource" }}
-      </button>
-
-      <button class="btn" @click="uploadResourceFile" :disabled="uploadingFile || !resourceForm.file">
-        {{ uploadingFile ? "Uploading..." : "Upload File Resource" }}
-      </button>
-    </div>
-  </div>
-
-  <hr style="margin: 18px 0; opacity: 0.35;" />
-
-  <h3>Recent Resources</h3>
-
-  <p v-if="loadingResources">Loading...</p>
-  <p v-else-if="resources.length === 0" class="muted">No resources yet.</p>
-
-  <ul v-else class="list">
-    <li v-for="r in resources" :key="r._id" class="row">
-      <div class="grow">
-        <strong>{{ r.title }}</strong>
-
-        <div class="muted small">
-          Type: {{ r.type }} • Audience: {{ r.audienceRole }}
-          <span v-if="r.assignedTo?.length"> • Assigned: {{ r.assignedTo.length }}</span>
+          <div v-if="selectedStudent" class="muted small">
+            Quick add selected student:
+            <button class="linkBtn" @click="quickAssignSelected">Add</button>
+          </div>
         </div>
 
-        <div v-if="r.url" class="small">
-          <a :href="r.url" target="_blank" rel="noreferrer">Open link</a>
+        <!-- ✅ Single dropdown “context picker” -->
+        <div class="field">
+          <label>Select a student (optional)</label>
+          <select v-model="selectedStudentId" class="input">
+            <option value="">-- none --</option>
+            <option v-for="s in students" :key="s._id" :value="s._id">
+              {{ s.name || s.email }}
+            </option>
+          </select>
+
+          <p class="muted small" v-if="selectedStudentId">
+            You can quick-assign this student using the button below.
+          </p>
+
+          <button
+            class="btn"
+            type="button"
+            v-if="selectedStudentId"
+            @click="quickAssignSelectedId"
+          >
+            Add selected student to AssignedTo
+          </button>
         </div>
 
-        <div v-if="r.file?.originalName" class="muted small">
-          File: {{ r.file.originalName }}
-        </div>
+        <div class="buttonRow">
+          <button class="btn" @click="createResource" :disabled="creatingResource">
+            {{ creatingResource ? "Creating..." : "Create Link Resource" }}
+          </button>
 
-        <!-- ✅ Download link belongs HERE (inside v-for) -->
-        <div v-if="r.file?.url" class="small">
-          <a :href="`http://localhost:5000${r.file.url}`" target="_blank" rel="noreferrer">
-            Download file
-          </a>
+          <button
+            class="btn"
+            @click="uploadResourceFile"
+            :disabled="uploadingFile || !resourceForm.file"
+          >
+            {{ uploadingFile ? "Uploading..." : "Upload File Resource" }}
+          </button>
         </div>
       </div>
 
-      <button class="dangerBtn" @click="deleteResource(r)" :disabled="deletingId === r._id">
-        {{ deletingId === r._id ? "Deleting..." : "Delete" }}
-      </button>
-    </li>
-  </ul>
-</section>
+      <hr style="margin: 18px 0; opacity: 0.35;" />
 
+      <h3>Recent Resources</h3>
+
+      <p v-if="loadingResources">Loading...</p>
+      <p v-else-if="resources.length === 0" class="muted">No resources yet.</p>
+
+      <ul v-else class="list">
+        <li v-for="r in resources" :key="r._id" class="row">
+          <div class="grow">
+            <strong>{{ r.title }}</strong>
+
+            <div class="muted small">
+              Type: {{ r.type }} • Audience: {{ r.audienceRole }}
+              <span v-if="r.assignedTo?.length"> • Assigned: {{ r.assignedTo.length }}</span>
+            </div>
+
+            <div v-if="r.url" class="small">
+              <a :href="r.url" target="_blank" rel="noreferrer">Open link</a>
+            </div>
+
+            <div v-if="r.file?.originalName" class="muted small">
+              File: {{ r.file.originalName }}
+            </div>
+
+            <div v-if="r.file?.url" class="small">
+              <a :href="downloadUrl(r.file.url)" target="_blank" rel="noreferrer">
+                Download file
+              </a>
+            </div>
+          </div>
+
+          <button class="dangerBtn" @click="deleteResource(r)" :disabled="deletingId === r._id">
+            {{ deletingId === r._id ? "Deleting..." : "Delete" }}
+          </button>
+        </li>
+      </ul>
+    </section>
 
     <!-- ASSIGNMENTS TAB (placeholder for now) -->
     <section v-if="activeTab === 'assignments'" class="card">
@@ -162,16 +197,18 @@
 </template>
 
 <script>
-
 import DashboardLayout from "../components/DashboardLayout.vue"
 import TutNav from "../components/nav/TutNav.vue"
 import api from "../services/api"
 
 export default {
   components: { DashboardLayout, TutNav },
+
   data() {
     return {
       message: { text: "", type: "success" },
+
+      me: null,
 
       students: [],
       resources: [],
@@ -184,23 +221,27 @@ export default {
 
       resourceForm: {
         title: "",
-        type: "tutorial", // ✅ required by schema
-        url: "",          // ✅ schema uses `url`
+        type: "tutorial",
+        url: "",
         audienceRole: "student",
         assignedTo: [],
-        file: null 
+        file: null
       },
+
       uploadingFile: false,
       creatingResource: false,
-      deletingId: null
+      deletingId: null,
+      selectedStudentId: ""
     }
   },
+
   computed: {
     activeTab() {
       const tab = (this.$route.query.tab || "dashboard").toString()
       const allowed = ["dashboard", "students", "resources", "assignments"]
       return allowed.includes(tab) ? tab : "dashboard"
     },
+
     filteredStudents() {
       const q = this.studentSearch.trim().toLowerCase()
       if (!q) return this.students
@@ -208,8 +249,16 @@ export default {
         (s.name || "").toLowerCase().includes(q) ||
         (s.email || "").toLowerCase().includes(q)
       )
+    },
+
+    greeting() {
+      const hour = new Date().getHours()
+      if (hour < 12) return "Good morning"
+      if (hour < 18) return "Good afternoon"
+      return "Good evening"
     }
   },
+
   watch: {
     activeTab: {
       immediate: true,
@@ -226,10 +275,46 @@ export default {
       }
     }
   },
+
+  mounted() {
+    this.fetchMe()
+  },
+
   methods: {
     toast(text, type = "success") {
       this.message = { text, type }
       setTimeout(() => (this.message.text = ""), 4000)
+    },
+
+    downloadUrl(fileUrl) {
+      if (!fileUrl) return ""
+      if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) return fileUrl
+      return `${window.location.origin}${fileUrl}`
+    },
+
+    quickAssignSelectedId() {
+      const id = this.selectedStudentId
+      if (!id) return
+      if (!this.resourceForm.assignedTo.includes(id)) {
+        this.resourceForm.assignedTo.push(id)
+      }
+    },
+
+    logout() {
+      localStorage.setItem("logoutReason", "logout")
+      localStorage.removeItem("token")
+      localStorage.removeItem("user")
+      localStorage.removeItem("lastActiveAt")
+      this.$router.replace({ path: "/" })
+    },
+
+    async fetchMe() {
+      try {
+        const { data } = await api.get("/auth/me")
+        this.me = data
+      } catch (e) {
+        console.error("Failed to load user", e)
+      }
     },
 
     async fetchStudents() {
@@ -269,6 +354,11 @@ export default {
       }
     },
 
+    onFileChange(e) {
+      const file = e.target.files?.[0]
+      this.resourceForm.file = file || null
+    },
+
     async createResource() {
       if (!this.resourceForm.title.trim()) {
         this.toast("Title is required", "error")
@@ -283,8 +373,8 @@ export default {
       try {
         const payload = {
           title: this.resourceForm.title.trim(),
-          type: this.resourceForm.type,                 // ✅ required
-          url: this.resourceForm.url.trim() || "",      // ✅ schema field
+          type: this.resourceForm.type,
+          url: this.resourceForm.url.trim() || "",
           audienceRole: this.resourceForm.audienceRole,
           assignedTo: this.resourceForm.assignedTo
         }
@@ -296,12 +386,56 @@ export default {
         this.resourceForm.type = "tutorial"
         this.resourceForm.url = ""
         this.resourceForm.assignedTo = []
-
         this.toast("Resource created")
       } catch (e) {
         this.toast(e?.response?.data?.message || "Failed to create resource", "error")
       } finally {
         this.creatingResource = false
+      }
+    },
+
+    async uploadResourceFile() {
+      if (!this.resourceForm.title.trim()) {
+        this.toast("Title is required", "error")
+        return
+      }
+      if (!this.resourceForm.type) {
+        this.toast("Type is required", "error")
+        return
+      }
+      if (!this.resourceForm.file) {
+        this.toast("Please choose a file first", "error")
+        return
+      }
+
+      this.uploadingFile = true
+      try {
+        const fd = new FormData()
+        fd.append("title", this.resourceForm.title.trim())
+        fd.append("type", this.resourceForm.type)
+        fd.append("url", this.resourceForm.url.trim() || "")
+        fd.append("audienceRole", this.resourceForm.audienceRole)
+        fd.append("assignedTo", this.resourceForm.assignedTo.join(","))
+        fd.append("file", this.resourceForm.file)
+
+        const { data } = await api.post("/tutor/resources/upload", fd, {
+          headers: { "Content-Type": "multipart/form-data" }
+        })
+
+        this.resources.unshift(data)
+
+        this.resourceForm.title = ""
+        this.resourceForm.type = "tutorial"
+        this.resourceForm.url = ""
+        this.resourceForm.assignedTo = []
+        this.resourceForm.file = null
+        if (this.$refs.fileInput) this.$refs.fileInput.value = ""
+
+        this.toast("File uploaded")
+      } catch (e) {
+        this.toast(e?.response?.data?.message || "Failed to upload file", "error")
+      } finally {
+        this.uploadingFile = false
       }
     },
 
@@ -316,72 +450,22 @@ export default {
       } finally {
         this.deletingId = null
       }
-    },
-    onFileChange(e) {
-  const file = e.target.files?.[0]
-  this.resourceForm.file = file || null
-},
-
-async uploadResourceFile() {
-  // Validate
-  if (!this.resourceForm.title.trim()) {
-    this.toast("Title is required", "error")
-    return
-  }
-  if (!this.resourceForm.type) {
-    this.toast("Type is required", "error")
-    return
-  }
-  if (!this.resourceForm.file) {
-    this.toast("Please choose a file first", "error")
-    return
-  }
-
-  this.uploadingFile = true
-
-  try {
-    const fd = new FormData()
-    fd.append("title", this.resourceForm.title.trim())
-    fd.append("type", this.resourceForm.type)
-    fd.append("url", this.resourceForm.url.trim() || "")
-    fd.append("audienceRole", this.resourceForm.audienceRole)
-
-    // send assignedTo safely (string list)
-    fd.append("assignedTo", this.resourceForm.assignedTo.join(","))
-
-    fd.append("file", this.resourceForm.file)
-
-    const { data } = await api.post("/tutor/resources/upload", fd, {
-      headers: { "Content-Type": "multipart/form-data" }
-    })
-
-    this.resources.unshift(data)
-
-    // Reset
-    this.resourceForm.title = ""
-    this.resourceForm.type = "tutorial"
-    this.resourceForm.url = ""
-    this.resourceForm.assignedTo = []
-    this.resourceForm.file = null
-    if (this.$refs.fileInput) this.$refs.fileInput.value = ""
-
-
-    this.toast("File uploaded")
-  } catch (e) {
-    this.toast(e?.response?.data?.message || "Failed to upload file", "error")
-  } finally {
-    this.uploadingFile = false
-  }
-},
-
+    }
   }
 }
 </script>
 
 <style scoped>
-.message { padding: 12px 14px; border-radius: 12px; margin-bottom: 14px; border: 1px solid rgba(15,23,42,0.10); }
-.success { background: rgba(34,197,94,0.12); }
-.error { background: rgba(239,68,68,0.12); }
+.pageTitle { margin: 0 0 10px; }
+
+.message {
+  padding: 12px 14px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(15,23,42,0.10);
+}
+.message.success { background: rgba(34,197,94,0.12); }
+.message.error { background: rgba(239,68,68,0.12); }
 
 .card {
   background: rgba(255,255,255,0.9);
@@ -414,7 +498,30 @@ async uploadResourceFile() {
 .muted { color: #475569; }
 .selected { margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: rgba(79,70,229,0.08); display:flex; justify-content: space-between; align-items:center; }
 
+.buttonRow { display:flex; gap: 10px; flex-wrap: wrap; }
+
 .btn { padding: 9px 12px; border: 0; border-radius: 10px; background: #4f46e5; color: white; cursor: pointer; }
 .dangerBtn { padding: 9px 12px; border: 0; border-radius: 10px; background: #dc3545; color: white; cursor: pointer; }
 .linkBtn { border: 0; background: transparent; color: #4f46e5; cursor: pointer; text-decoration: underline; }
+
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.logoutBtn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(15,23,42,0.15);
+  background: white;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.logoutBtn:hover {
+  background: rgba(239,68,68,0.08);
+  color: #dc3545;
+}
 </style>

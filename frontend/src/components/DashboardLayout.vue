@@ -1,3 +1,5 @@
+//DashboardLayout.vue - A reusable layout component for dashboard pages, providing a sticky navigation area and a main content area.
+
 <template>
   <div class="layout">
     <slot name="nav"></slot>

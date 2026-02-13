@@ -1,22 +1,129 @@
-// backend/src/controllers/authController.js
-import User from "../models/User.js"; 
+// backend/src/controllers/auth.controller.js
+import User from "../models/User.js";
 import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 import generateToken from "../utils/generateToken.js";
+
+// ✅ Central subject list (backend authoritative list)
+export const SUBJECT_OPTIONS = [
+  "maths",
+  "english",
+  "literature",
+  "general science",
+  "biology",
+  "chemistry",
+  "physics",
+  "computer science",
+  "history",
+  "geography",
+  "global perspective for ks3"
+];
+
+// -------------------- helpers --------------------
+const normalizeSubjects = (subjects) => {
+  if (!subjects) return [];
+  const arr = Array.isArray(subjects) ? subjects : [subjects];
+
+  const cleaned = arr
+    .map((s) => String(s).trim().toLowerCase())
+    .filter(Boolean);
+
+  const unique = [...new Set(cleaned)];
+
+  for (const s of unique) {
+    if (!SUBJECT_OPTIONS.includes(s)) {
+      throw new Error(`Invalid subject: ${s}`);
+    }
+  }
+  return unique;
+};
+
+// ✅ Step 8 helper
+const normalizeTutorIds = (tutorIds) => {
+  if (!tutorIds) return [];
+  const arr = Array.isArray(tutorIds) ? tutorIds : [tutorIds];
+  return [...new Set(arr.map(String).filter(Boolean))];
+};
+
+// Pick ONE tutor (fallback):
+// - approved tutors only
+// - match subjects if possible
+// - choose tutor with fewest assigned students (by tutorIds array)
+const pickTutorForSubjects = async (subjects) => {
+  const subjectList = normalizeSubjects(subjects);
+  if (!subjectList.length) return null;
+
+  let tutors = await User.find({
+    role: "tutor",
+    isApproved: true,
+    subjects: { $in: subjectList }
+  }).select("_id").lean();
+
+  // fallback to any approved tutor
+  if (!tutors.length) {
+    tutors = await User.find({
+      role: "tutor",
+      isApproved: true
+    }).select("_id").lean();
+  }
+
+  if (!tutors.length) return null;
+
+  const tutorObjectIds = tutors.map((t) => t._id);
+
+  // count load (students that have tutor inside tutorIds array)
+  const counts = await User.aggregate([
+    { $match: { role: "student", tutorIds: { $in: tutorObjectIds } } },
+    { $unwind: "$tutorIds" },
+    { $match: { tutorIds: { $in: tutorObjectIds } } },
+    { $group: { _id: "$tutorIds", count: { $sum: 1 } } }
+  ]);
+
+  const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+
+  let best = tutorObjectIds[0];
+  let bestCount = countMap.get(String(best)) ?? 0;
+
+  for (const id of tutorObjectIds) {
+    const c = countMap.get(String(id)) ?? 0;
+    if (c < bestCount) {
+      best = id;
+      bestCount = c;
+    }
+  }
+
+  return best; // ObjectId
+};
+
+// -------------------- controllers --------------------
 
 /**
  * @route POST /api/auth/register
  */
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, tutorIds } = req.body;
 
-    // Check if email is already registered
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
+    if (!name?.trim()) return res.status(400).json({ message: "Name is required" });
+    if (!email?.trim()) return res.status(400).json({ message: "Email is required" });
+    if (!password) return res.status(400).json({ message: "Password is required" });
+    if (!role) return res.status(400).json({ message: "Role is required" });
+
+    // ✅ subjects from dropdown
+    let subjects = [];
+    try {
+      subjects = normalizeSubjects(req.body.subjects);
+    } catch (e) {
+      return res.status(400).json({ message: e.message });
     }
 
-    //  Prevent more than one admin
+    const lowerEmail = email.toLowerCase();
+
+    // Check if email exists
+    const userExists = await User.findOne({ email: lowerEmail });
+    if (userExists) return res.status(400).json({ message: "User already exists" });
+
+    // Prevent more than one admin
     if (role === "admin") {
       const existingAdmin = await User.findOne({ role: "admin" });
       if (existingAdmin) {
@@ -24,26 +131,77 @@ export const registerUser = async (req, res) => {
       }
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Require subjects for these roles
+    if ((role === "tutor" || role === "student" || role === "parent") && subjects.length === 0) {
+      return res.status(400).json({ message: "Please select at least one subject." });
+    }
 
-    const user = await User.create({
-      name,
-      email,
+    const hashedPassword = await bcrypt.hash(password, await bcrypt.genSalt(10));
+
+    const userDoc = {
+      name: name.trim(),
+      email: lowerEmail,
       password: hashedPassword,
       role,
-      isApproved: role === "admin" // admin auto-approved
-    });
+      subjects,
+      isApproved: role === "admin",
+      approvedAt: role === "admin" ? new Date() : null
+    };
 
-    res.status(201).json({
+    // ✅ Step 8: accept selected tutorIds + validate (students only for now)
+    let chosenTutorIds = normalizeTutorIds(tutorIds);
+
+    if (role === "student" && chosenTutorIds.length) {
+      // validate tutor ids are real ObjectIds
+      const objectIds = chosenTutorIds
+        .filter((id) => mongoose.Types.ObjectId.isValid(id))
+        .map((id) => new mongoose.Types.ObjectId(id));
+
+      if (!objectIds.length) {
+        return res.status(400).json({ message: "Invalid tutor selection." });
+      }
+
+      // validate: approved tutors, role tutor, subjects match student's subjects
+      const validTutors = await User.find({
+        _id: { $in: objectIds },
+        role: "tutor",
+        isApproved: true,
+        subjects: { $in: subjects }
+      }).select("_id").lean();
+
+      chosenTutorIds = validTutors.map((t) => t._id);
+
+      if (!chosenTutorIds.length) {
+        return res
+          .status(400)
+          .json({ message: "Selected tutor(s) do not match your subject(s)." });
+      }
+
+      userDoc.tutorIds = chosenTutorIds; // already ObjectIds
+    }
+
+    // ✅ fallback auto-pick if student did not choose tutors
+    if (role === "student" && (!userDoc.tutorIds || userDoc.tutorIds.length === 0)) {
+      const autoTutor = await pickTutorForSubjects(subjects);
+      userDoc.tutorIds = autoTutor ? [autoTutor] : [];
+    }
+
+    // (Optional) parent later - keep empty for now so it doesn't break
+    // if (role === "parent") { ... parentTutorIds ... }
+
+    const user = await User.create(userDoc);
+
+    return res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id),
+      subjects: user.subjects || [],
+      tutorIds: user.tutorIds || [],
+      token: generateToken(user._id)
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ message: error.message });
   }
 };
 
@@ -54,37 +212,52 @@ export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1️⃣ Find user
-    const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    const user = await User.findOne({ email: String(email || "").toLowerCase() });
+    if (!user) return res.status(400).json({ message: "Invalid credentials" });
 
-    // 2️⃣ Approval check (BLOCKS non-admin users)
     if (!user.isApproved && user.role !== "admin") {
-      return res
-        .status(403)
-        .json({ message: "Account pending admin approval" });
+      return res.status(403).json({ message: "Account pending admin approval" });
     }
 
-    // 3️⃣ Password check
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    // 4️⃣ Success
-    res.json({
+    return res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id),
+      token: generateToken(user._id)
     });
-
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
+export const getMe = async (req, res) => {
+  return res.json(req.user);
+};
+
+// ✅ used by Step 9 frontend watcher
+export const getMatchingTutors = async (req, res) => {
+  try {
+    const raw = String(req.query.subjects || "");
+    const subjects = normalizeSubjects(raw.split(","));
+
+    if (!subjects.length) return res.json({ tutors: [] });
+
+    const tutors = await User.find({
+      role: "tutor",
+      isApproved: true,
+      subjects: { $in: subjects }
+    })
+      .select("_id name subjects")
+      .sort({ name: 1 })
+      .lean();
+
+    return res.json({ tutors });
+  } catch (e) {
+    return res.status(400).json({ message: e.message });
+  }
+};

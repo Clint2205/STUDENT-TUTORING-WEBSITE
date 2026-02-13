@@ -1,3 +1,5 @@
+// adminController.js - Controller functions for admin-specific actions, such as managing user approvals and resources.
+
 import User from "../models/User.js";
 import { sendEmail } from "../utils/sendEmail.js";
 import Resource from "../models/Resource.js";

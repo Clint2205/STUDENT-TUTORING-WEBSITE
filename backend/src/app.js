@@ -11,6 +11,7 @@ import authRoutes from "./routes/auth.routes.js";
 import protectedRoutes from "./routes/protected.routes.js";
 import adminCheckRoutes from "./routes/adminCheck.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import studentRoutes from "./routes/studentRoutes.js";
 
 const app = express();
 console.log("ENV CHECK:", process.env.YAHOO_USER);
@@ -35,6 +36,7 @@ app.use("/api/admin", adminCheckRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use("/api/tutor", tutorRoutes)
+app.use("/api/student", studentRoutes);
 
 
 const PORT = process.env.PORT || 5000;

@@ -1,3 +1,5 @@
+// adminRoutes.js - Routes for admin-specific actions, such as managing user approvals and resources.
+
 import express from "express";
 import {
   getPendingUsers,
