@@ -124,10 +124,10 @@
 
         <form @submit.prevent="handleSubmit" autocomplete="on" class="form">
           <div class="field">
-            <label>Email</label>
+            <label>Email or Student Login ID</label>
             <input
-              type="email"
-              v-model="form.email"
+              type="text"
+              v-model="form.identifier"
               placeholder="you@example.com"
               required
               :disabled="loading"
@@ -304,7 +304,7 @@ export default {
       message: { text: "", type: "" }, // success | error
       
       subjectOptions: [],
-     form: { name: "", email: "", password: "", role: "", subjects: [], tutorIds: [] },
+     form: { name: "", email: "", identifier: "", password: "", role: "", subjects: [], tutorIds: [] },
 
       tutoringImage,
       directorimage,
@@ -479,14 +479,19 @@ export default {
           this.form = { name: "", email: "", password: "", role: "", subjects: [] };
 
         } else {
-          const response = await login({
-            email: this.form.email,
-            password: this.form.password
-          });
+         const response = await login({
+  identifier: this.form.identifier,
+  password: this.form.password
+});
 
-          if (!response?.data?.token || !response?.data?.role) {
-            throw new Error("Invalid auth response");
-          }
+// 🔐 FIRST LOGIN DETECTED
+if (response.data.forcePasswordChange) {
+  this.$router.push({
+    path: "/change-password",
+    query: { userId: response.data.userId }
+  });
+  return;
+}
 
           localStorage.setItem("token", response.data.token);
           localStorage.setItem(

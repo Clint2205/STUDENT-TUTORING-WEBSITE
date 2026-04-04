@@ -102,7 +102,13 @@ const pickTutorForSubjects = async (subjects) => {
  */
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role, tutorIds } = req.body;
+
+    console.log("REGISTER BODY:", req.body);
+    const name = req.body.name;
+const email = req.body.email || req.body.Email || req.body.userEmail;
+const password = req.body.password;
+const role = req.body.role;
+const tutorIds = req.body.tutorIds;
 
     if (!name?.trim()) return res.status(400).json({ message: "Name is required" });
     if (!email?.trim()) return res.status(400).json({ message: "Email is required" });
@@ -210,28 +216,62 @@ export const registerUser = async (req, res) => {
  */
 export const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { identifier, password } = req.body;
 
-    const user = await User.findOne({ email: String(email || "").toLowerCase() });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    const user = await User.findOne({
+      $or: [
+        { email: identifier?.toLowerCase() },
+        { loginId: identifier }
+      ]
+    });
 
-    if (!user.isApproved && user.role !== "admin") {
-      return res.status(403).json({ message: "Account pending admin approval" });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // 🔐 FORCE FIRST LOGIN PASSWORD CHANGE
+    if (user.isFirstLogin) {
+      return res.json({
+        forcePasswordChange: true,
+        userId: user._id
+      });
+    }
 
     return res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
+      loginId: user.loginId,
       role: user.role,
       token: generateToken(user._id)
     });
+
   } catch (err) {
-    console.error("Login error:", err);
-    return res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: err.message });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { userId, newPassword } = req.body;
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    await User.findByIdAndUpdate(userId, {
+      password: hashed,
+      isFirstLogin: false,
+      passwordResetRequired: false
+    });
+
+    return res.json({ message: "Password updated successfully" });
+
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
   }
 };
 

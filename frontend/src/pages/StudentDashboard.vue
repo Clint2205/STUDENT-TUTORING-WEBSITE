@@ -7,7 +7,7 @@
 
       <button class="logoutBtn" @click="logout">
         Logout
-      </button>
+      </button>                                                                                         
     </template>
 
     <!-- STATUS MESSAGE -->

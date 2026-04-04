@@ -49,19 +49,16 @@ export const getStudentResources = async (req, res) => {
     const adminIds = adminUsers.map((u) => u._id);
 
     const filter = {
-      $and: [
-        {
-          $or: [
-            { assignedTo: new mongoose.Types.ObjectId(studentId) },
-            { audienceRole: { $in: ["student", "all"] } }
-          ]
-        },
-        {
-          createdBy: { $in: [...tutorIds, ...adminIds] }
-        },
-        { _id: { $nin: hiddenIds } }
-      ]
-    };
+  $and: [
+    {
+      assignedTo: new mongoose.Types.ObjectId(studentId)
+    },
+    {
+      createdBy: { $in: [...tutorIds, ...adminIds] }
+    },
+    { _id: { $nin: hiddenIds } }
+  ]
+};
 
     const resources = await Resource.find(filter)
       .sort({ createdAt: -1 })

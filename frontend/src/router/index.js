@@ -16,7 +16,11 @@ const routes = [
   { path: "/parent", name: "ParentDashboard", component: ParentDashboard, meta: { requiresAuth: true, role: "parent" } },
   { path: "/student", name: "StudentDashboard", component: StudentDashboard, meta: { requiresAuth: true, role: "student" } },
   { path: "/tutor", name: "TutorDashboard", component: TutorDashboard, meta: { requiresAuth: true, role: "tutor" } },
-  { path: "/admin", name: "AdminDashboard", component: AdminDashboard, meta: { requiresAuth: true, role: "admin" } }
+  { path: "/admin", name: "AdminDashboard", component: AdminDashboard, meta: { requiresAuth: true, role: "admin" } },
+ {
+  path: "/change-password",
+  component: () => import("../pages/ChangePassword.vue")
+}
 ];
 
 const router = createRouter({
