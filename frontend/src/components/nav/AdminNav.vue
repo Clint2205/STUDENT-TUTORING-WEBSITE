@@ -87,7 +87,8 @@ export default {
         { key: "users", label: "Users" },
         { key: "content", label: "Content" },
         { key: "payments", label: "Payments" },
-        { key: "resources", label: "Resources" }
+        { key: "payment-history", label: "Payment History" },
+        { key: "resources", label: "Resources" },
       ]
     };
   },

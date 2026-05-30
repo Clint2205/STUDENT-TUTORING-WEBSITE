@@ -290,11 +290,76 @@
     <!-- 💳 PAYMENTS TAB -->
     <!-- ===================== -->
     <section v-if="activeTab === 'payments'">
-      <h2>Payments</h2>
+  <h2>Tutor Payments</h2>
 
-      <p>Total revenue: £0.00</p>
-      <p>Stripe integration pending.</p>
-    </section>
+  <p v-if="paymentsLoading">Loading payments...</p>
+
+  <table v-if="tutorPayments.length">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Hourly Rate</th>
+        <th>Hours</th>
+        <th>Sessions</th>
+        <th>Total Earnings</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr v-for="t in tutorPayments" :key="t._id">
+        <td>{{ t.name }}</td>
+        <td>{{ t.email }}</td>
+        <td>£{{ t.hourlyRate || 20 }}</td>
+        <td>{{ t.totalHours }}</td>
+        <td>{{ t.totalSessions }}</td>
+        <td><strong>£{{ t.totalEarnings }}</strong></td>
+
+        <td>
+          <button @click="markAsPaid(t)">Mark Paid</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p v-if="!paymentsLoading && tutorPayments.length === 0">
+    No tutor data yet.
+  </p>
+</section>
+
+<!-- 💰 PAYMENT HISTORY TAB -->
+<section v-if="activeTab === 'payment-history'">
+  <h2>Payment History</h2>
+
+  <p v-if="historyLoading">Loading payment history...</p>
+
+  <table v-if="paymentHistory.length">
+    <thead>
+      <tr>
+        <th>Tutor</th>
+        <th>Amount</th>
+        <th>Sessions</th>
+        <th>Paid By</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr v-for="p in paymentHistory" :key="p._id">
+        <td>{{ p.tutorId?.name }}</td>
+        <td>£{{ p.amount }}</td>
+        <td>{{ p.sessions?.length }}</td>
+        <td>{{ p.paidBy?.name }}</td>
+        <td>{{ new Date(p.paidAt).toLocaleString() }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p v-if="!historyLoading && paymentHistory.length === 0">
+    No payment history yet.
+  </p>
+</section>
   </DashboardLayout>
 </template>
 
@@ -328,7 +393,11 @@ export default {
       resourceSearch: "",
       resourceFilter: "all",
       resourcesLoading: false,
-      resourceFile: null
+      resourceFile: null,
+      tutorPayments: [],
+      paymentsLoading: false,
+      paymentHistory: [],
+      historyLoading: false
       
 
     };
@@ -431,6 +500,13 @@ watch: {
     if (tab === "resources" && this.allUsers.length === 0) {
       this.fetchApprovedUsers();
     }
+    if (tab === "payments" && this.tutorPayments.length === 0) {
+  this.fetchTutorPayments();
+}
+
+    if (tab === "payment-history" && this.paymentHistory.length === 0) {
+  this.fetchPaymentHistory();
+   }
   },
 
   // ✅ clear selections when audience group changes
@@ -689,6 +765,28 @@ async uploadResourceFile() {
     this.showMessage(err.response?.data?.message || "Upload failed", "error");
   }
 },
+async fetchTutorPayments() {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  this.paymentsLoading = true;
+
+  try {
+    const res = await axios.get(
+      "http://localhost:5000/api/admin/tutor-payments",
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    this.tutorPayments = res.data;
+  } catch (err) {
+    console.error(err);
+    this.showMessage("Failed to load tutor payments", "error");
+  } finally {
+    this.paymentsLoading = false;
+  }
+},
 
 prettyType(type) {
   const map = {
@@ -703,7 +801,52 @@ prettyType(type) {
   };
   return map[type] || type;
 },
+async markAsPaid(tutor) {
+  const token = localStorage.getItem("token");
+  if (!token) return this.$router.replace("/");
 
+  try {
+    await axios.put(
+      `http://localhost:5000/api/admin/tutor-payments/${tutor._id}/mark-paid`,
+      {},
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    this.showMessage(`${tutor.name} marked as paid`, "success");
+
+    // refresh list
+    this.fetchTutorPayments();
+
+  } catch (err) {
+    console.error(err);
+    this.showMessage("Failed to mark as paid", "error");
+  }
+},
+
+async fetchPaymentHistory() {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  this.historyLoading = true;
+
+  try {
+    const res = await axios.get(
+      "http://localhost:5000/api/admin/payment-history",
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    );
+
+    this.paymentHistory = res.data;
+  } catch (err) {
+    console.error(err);
+    this.showMessage("Failed to load payment history", "error");
+  } finally {
+    this.historyLoading = false;
+  }
+}
 
   }
 };

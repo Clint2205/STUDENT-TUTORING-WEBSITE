@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import Resource from "../models/Resource.js";
 import { sendEmail } from "../utils/sendEmail.js";
+import Session from "../models/Sessions.js";
 
 function slugify(str = "") {
   return str
@@ -182,6 +183,55 @@ export async function getChildResources(req, res) {
     return res.status(500).json({ message: "Server error loading child resources." });
   }
 }
+/**
+ * GET /api/parent/progress/:childUserId
+ * Parent can see child's learning progress
+ */
+
+export async function getChildProgress(req, res) {
+  try {
+    const parentId = req.user._id;
+    const { childUserId } = req.params;
+
+    // ✅ Verify child belongs to parent
+    const child = await User.findOne({
+      _id: childUserId,
+      role: "student",
+      parentId,
+      isChildAccount: true
+    });
+
+    if (!child) {
+      return res.status(404).json({
+        message: "Child not found"
+      });
+    }
+
+    // ✅ Find sessions for this child
+    const sessions = await Session.find({
+      studentId: childUserId
+    })
+      .populate("tutorId", "name")
+      .populate("resourceId", "title")
+      .sort({ createdAt: -1 });
+
+    return res.json({
+      child: {
+        _id: child._id,
+        name: child.childName || child.name
+      },
+      sessions
+    });
+
+  } catch (err) {
+    console.error("getChildProgress error:", err);
+
+    return res.status(500).json({
+      message: "Server error loading progress"
+    });
+  }
+}
+
 
 /**
  * POST /api/parent/children/:childUserId/hide/:resourceId

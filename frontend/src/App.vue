@@ -7,3 +7,11 @@ export default {
   name: 'App'
 }
 </script>
+
+<style scoped>
+
+html {
+  scroll-behavior: smooth;
+}
+
+</style>

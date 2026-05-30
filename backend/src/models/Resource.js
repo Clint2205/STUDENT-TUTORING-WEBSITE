@@ -30,6 +30,80 @@ const resourceSchema = new mongoose.Schema(
 
     //  Optional: target specific users (if empty => everyone in audienceRole)
     assignedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    // 📘 Student progress tracking
+progress: [
+  {
+    studentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
+
+    completionStatus: {
+      type: String,
+      enum: ["completed", "not_completed"],
+      default: "not_completed"
+    },
+
+    understandingLevel: {
+      type: Number,
+      min: 1,
+      max: 5,
+      default: 3
+    },
+
+    tutorNotes: {
+      type: String,
+      default: ""
+    },
+
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
+
+    updatedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }
+],
+// 📝 Student submissions
+submissions: [
+  {
+    studentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+    },
+
+    message: {
+      type: String,
+      default: ""
+    },
+
+    file: {
+      originalName: String,
+      filename: String,
+      url: String,
+      mimetype: String,
+      size: Number
+    },
+
+    submittedAt: {
+      type: Date,
+      default: Date.now
+    },
+
+    feedback: {
+      type: String,
+      default: ""
+    },
+
+    grade: {
+      type: String,
+      default: ""
+    }
+  }
+],
 
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }
   },

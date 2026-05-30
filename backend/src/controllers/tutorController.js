@@ -2,6 +2,7 @@
 
 import User from "../models/User.js"
 import Resource from "../models/Resource.js"
+import Session from "../models/Sessions.js"
 
 // GET /api/tutor/students
 export const getMyStudents = async (req, res) => {
@@ -40,6 +41,7 @@ export const getMyResources = async (req, res) => {
     })
       .sort({ createdAt: -1 })
       .populate("createdBy", "_id name role")
+      .populate("submissions.studentId", "_id name")
       .lean();
 
     return res.json(resources);
@@ -161,3 +163,179 @@ export const deleteTutorResource = async (req, res) => {
     return res.status(500).json({ message: err.message })
   }
 }
+// POST /api/tutor/sessions
+export const createSession = async (req, res) => {
+  try {
+    const { studentId, duration, notes, resourceId } = req.body;
+
+    if (!studentId || !duration) {
+      return res.status(400).json({
+        message: "studentId and duration are required."
+      });
+    }
+
+    if (duration <= 0) {
+      return res.status(400).json({
+        message: "Duration must be greater than 0."
+      });
+    }
+
+    // ✅ Ensure student belongs to this tutor
+    const student = await User.findOne({
+      _id: studentId,
+      role: "student",
+      tutorIds: req.user._id
+    });
+
+    if (!student) {
+      return res.status(403).json({
+        message: "You can only log sessions for your own students."
+      });
+    }
+
+    // ✅ Get tutor hourly rate (add this field to User later if not present)
+    const tutor = await User.findById(req.user._id);
+    const hourlyRate = tutor.hourlyRate || 20; // fallback
+
+    const totalAmount = duration * hourlyRate;
+
+    const session = await Session.create({
+      tutorId: req.user._id,
+      studentId,
+      duration,
+      hourlyRate,
+      totalAmount,
+      notes,
+      resourceId
+    });
+
+    return res.status(201).json(session);
+  } catch (err) {
+    console.error("createSession error:", err);
+    return res.status(500).json({ message: err.message });
+  }
+};
+// GET /api/tutor/dashboard
+export const tutorDashboard = async (req, res) => {
+  try {
+    const tutorId = req.user._id;
+
+    const stats = await Session.aggregate([
+      { $match: { tutorId } },
+      {
+        $group: {
+          _id: null,
+          totalHours: { $sum: "$duration" },
+          totalEarnings: { $sum: "$totalAmount" },
+          totalSessions: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const students = await User.countDocuments({
+      role: "student",
+      tutorIds: tutorId
+    });
+
+    return res.json({
+      ...(stats[0] || {
+        totalHours: 0,
+        totalEarnings: 0,
+        totalSessions: 0
+      }),
+      totalStudents: students
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message });
+  }
+  
+};
+
+// PUT /api/tutor/rate
+export const updateHourlyRate = async (req, res) => {
+  try {
+
+    console.log("BODY:", req.body);
+    const { hourlyRate } = req.body;
+
+    if (hourlyRate === undefined || hourlyRate < 0) {
+      return res.status(400).json({ message: "Invalid hourly rate" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { hourlyRate },
+      { new: true }
+    );
+
+    res.json({
+      message: "Hourly rate updated",
+      hourlyRate: user.hourlyRate
+    });
+    console.log("UPDATED USER:", user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// PUT /api/tutor/resources/:id/progress
+export const updateResourceProgress = async (req, res) => {
+  try {
+    const { studentId, completionStatus, understandingLevel, tutorNotes } = req.body;
+
+    const resource = await Resource.findById(req.params.id);
+
+    if (!resource) {
+      return res.status(404).json({
+        message: "Resource not found"
+      });
+    }
+
+    // ensure student belongs to tutor
+    const student = await User.findOne({
+      _id: studentId,
+      tutorIds: req.user._id
+    });
+
+    if (!student) {
+      return res.status(403).json({
+        message: "Student not assigned to you"
+      });
+    }
+
+    // check existing progress
+    const existingProgress = resource.progress.find(
+      p => String(p.studentId) === String(studentId)
+    );
+
+    if (existingProgress) {
+      existingProgress.completionStatus = completionStatus;
+      existingProgress.understandingLevel = understandingLevel;
+      existingProgress.tutorNotes = tutorNotes;
+      existingProgress.updatedBy = req.user._id;
+      existingProgress.updatedAt = new Date();
+    } else {
+      resource.progress.push({
+        studentId,
+        completionStatus,
+        understandingLevel,
+        tutorNotes,
+        updatedBy: req.user._id
+      });
+    }
+
+    await resource.save();
+
+    res.json({
+      message: "Progress updated successfully",
+      resource
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: "Failed to update progress"
+    });
+  }
+};

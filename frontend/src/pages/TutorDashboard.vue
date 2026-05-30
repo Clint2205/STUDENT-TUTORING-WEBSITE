@@ -26,20 +26,250 @@
 
     <!-- DASHBOARD TAB -->
     <section v-if="activeTab === 'dashboard'" class="card">
-      <h2>Overview</h2>
+  <h2>Overview</h2>
 
-      <div class="grid">
-        <div class="stat">
-          <div class="muted">My students</div>
-          <div class="big">{{ students.length }}</div>
-        </div>
+  <div class="grid">
+    <div class="stat">
+      <div class="muted">Students</div>
+      <div class="big">{{ dashboard.totalStudents }}</div>
+    </div>
 
-        <div class="stat">
-          <div class="muted">Resources</div>
-          <div class="big">{{ resources.length }}</div>
-        </div>
+    <div class="stat">
+      <div class="muted">Hours taught</div>
+      <div class="big">{{ dashboard.totalHours }}</div>
+    </div>
+
+    <div class="stat">
+      <div class="muted">Earnings</div>
+      <div class="big">£{{ dashboard.totalEarnings }}</div>
+    </div>
+
+    <div class="stat">
+      <div class="muted">Sessions</div>
+      <div class="big">{{ dashboard.totalSessions }}</div>
+    </div>
+  </div>
+  <h2>My Hourly Rate</h2>
+
+  <input
+    type="number"
+    v-model="rateForm.hourlyRate"
+    class="input"
+    placeholder="Hourly rate (£)"
+  />
+
+  <button class="btn" @click="updateRate">
+    Update Rate
+  </button>
+
+  <p class="muted small">
+    This rate is used to calculate your earnings automatically.
+  </p>
+
+  <div class="stat">
+  <div class="muted">Hourly Rate</div>
+  <div class="big">£{{ me?.hourlyRate ?? 20 }}</div>
+</div>
+
+
+
+<!-- Session logging form -->
+<section class="card">
+  <h2>Session Entry (Log Session)</h2>
+
+  <select v-model="sessionForm.studentId" class="input">
+    <option value="">Select student</option>
+    <option v-for="s in students" :key="s._id" :value="s._id">
+      {{ s.name || s.email }}
+    </option>
+  </select>
+
+  <select
+  v-model="sessionForm.resourceId"
+  class="input"
+>
+  <option disabled value="">
+    📚 Select linked resource
+  </option>
+
+  <option
+    v-for="r in resources"
+    :key="r._id"
+    :value="r._id"
+  >
+    {{ r.title }}
+  </option>
+</select>
+
+  <input
+    type="number"
+    step="0.25"
+    v-model="sessionForm.duration"
+    placeholder="Duration (hours)"
+    class="input"
+  />
+
+  <input
+    v-model="sessionForm.notes"
+    placeholder="Notes"
+    class="input"
+  />
+
+  <button class="btn" @click="createSession">
+    Log Session
+  </button>
+</section>
+
+<!-- ✅ SESSIONS LIST -->
+<div class="card" style="margin-top: 20px;">
+  <h2>Session Review (Feedback)</h2>
+
+  <p v-if="loadingSessions">Loading sessions...</p>
+
+  <div v-else>
+    <p v-if="sessions.length === 0" class="muted">
+      No sessions logged yet.
+    </p>
+
+    <div v-for="s in sessions" :key="s._id" class="sessionCard">
+
+      <div>
+        <strong>
+          {{ s.studentId?.name || "Student" }}
+        </strong>
+
+        <div class="muted small">
+  {{ s.duration }}h • £{{ s.totalAmount }}
+</div>
+
+<div
+  v-if="s.resourceId?.title"
+  class="resourceBadge"
+>
+  📚 Resource:
+  <strong>{{ s.resourceId.title }}</strong>
+</div>
       </div>
-    </section>
+
+      <!-- 🔥 PASTE YOUR PROGRESS BOX HERE -->
+   <!-- ✅ Progress Dropdown -->
+<div class="progressWrapper">
+
+  <!-- Header -->
+  <div
+    class="progressHeader"
+    @click="s.showProgress = !s.showProgress"
+  >
+    <div>
+      <strong>Student Progress</strong>
+
+      <div class="small muted">
+        {{
+          s.progress?.completionStatus === "completed"
+            ? "Completed"
+            : "Not Completed"
+        }}
+      </div>
+    </div>
+
+    <div class="dropdownIcon">
+      {{ s.showProgress ? "▲" : "▼" }}
+    </div>
+  </div>
+
+  <!-- Dropdown Content -->
+  <div
+    v-if="s.showProgress"
+    class="progressBox"
+  >
+
+    <div
+      v-if="s.resourceId?.title"
+      class="progressResourceTitle"
+    >
+      {{ s.resourceId.title }}
+    </div>
+
+    <!-- Completion -->
+    <label class="smallLabel">
+      Lesson Completion
+    </label>
+
+    <select v-model="s.progress.completionStatus">
+      <option value="completed">
+        ✅ Completed
+      </option>
+
+      <option value="not_completed">
+        ❌ Not Completed
+      </option>
+    </select>
+
+    <!-- Understanding -->
+    <label class="smallLabel">
+      Understanding Level
+    </label>
+
+    <select v-model="s.progress.understandingLevel">
+
+      <option :value="1">
+        1 - Very Poor
+      </option>
+
+      <option :value="2">
+        2 - Needs Improvement
+      </option>
+
+      <option :value="3">
+        3 - Average
+      </option>
+
+      <option :value="4">
+        4 - Good
+      </option>
+
+      <option :value="5">
+        5 - Excellent
+      </option>
+
+    </select>
+
+    <!-- Notes -->
+    <label class="smallLabel">
+      Tutor Notes
+    </label>
+
+    <textarea
+      v-model="s.progress.tutorNotes"
+      placeholder="Explain student progress..."
+    ></textarea>
+
+    <!-- Buttons -->
+    <div class="progressActions">
+
+      <button
+        class="saveProgressBtn"
+        @click="submitProgress(s)"
+      >
+        Save Progress
+      </button>
+
+      <button
+        class="deleteProgressBtn"
+        @click="deleteProgress(s)"
+      >
+        Delete Progress
+      </button>
+
+    </div>
+
+  </div>
+</div>
+
+    </div>
+  </div>
+</div>
+</section>
 
     <!-- STUDENTS TAB -->
     <section v-if="activeTab === 'students'" class="card">
@@ -218,6 +448,47 @@
                 Download file
               </a>
             </div>
+
+            <!-- ✅ Student Submissions -->
+<div
+  v-if="r.submissions && r.submissions.length"
+  class="submissionReviewBox"
+>
+
+  <h4>Student Submissions</h4>
+
+  <div
+    v-for="sub in r.submissions"
+    :key="sub._id"
+    class="submissionItem"
+  >
+
+    <div class="muted small">
+      Submitted by:
+      {{ sub.studentId?.name || "Student" }}
+    </div>
+
+    <div v-if="sub.message">
+      <strong>Message:</strong>
+      {{ sub.message }}
+    </div>
+
+    <div v-if="sub.file?.url">
+      <a
+        :href="downloadUrl(sub.file.url)"
+        target="_blank"
+      >
+        Download Submission
+      </a>
+    </div>
+
+    <div class="muted small">
+      {{ new Date(sub.submittedAt).toLocaleString() }}
+    </div>
+
+  </div>
+
+</div>
           </div>
 
           <button
@@ -231,10 +502,109 @@
       </ul>
     </section>
 
-    <!-- ASSIGNMENTS TAB -->
-    <section v-if="activeTab === 'assignments'" class="card">
-      <h2>Assignments</h2>
-      <p class="muted">Next step: create assignments per selected student.</p>
+    <!-- BOOKINGS TAB -->
+    <section v-if="activeTab === 'bookings'" class="card">
+      <h2>Bookings</h2>
+     <section class="card">
+
+  <h2>Tutor Availability</h2>
+
+  <div
+    v-for="(slot, index)
+    in availabilityForm.availability"
+    :key="index"
+    class="availabilityRow"
+  >
+
+    <select v-model="slot.day">
+
+      <option>Monday</option>
+      <option>Tuesday</option>
+      <option>Wednesday</option>
+      <option>Thursday</option>
+      <option>Friday</option>
+      <option>Saturday</option>
+      <option>Sunday</option>
+
+    </select>
+
+    <input
+      type="time"
+      v-model="slot.startHour"
+    />
+
+    <input
+      type="time"
+      v-model="slot.endHour"
+    />
+
+  </div>
+
+  <button
+    class="btn"
+    @click="addAvailability"
+  >
+    Add Slot
+  </button>
+
+  <button
+    class="btn"
+    @click="saveAvailability"
+  >
+    Save Availability
+  </button>
+
+</section>
+
+<section class="card">
+
+  <h2>Lesson Bookings</h2>
+
+  <div
+    v-for="b in bookings"
+    :key="b._id"
+    class="bookingCard"
+  >
+
+    <strong>
+      {{ b.studentId?.name }}
+    </strong>
+
+    <div class="muted small">
+      {{ new Date(b.startTime)
+      .toLocaleString() }}
+    </div>
+
+    <div>
+      Status:
+      {{ b.status }}
+    </div>
+
+    <button
+      v-if="b.status === 'pending'"
+      class="btn"
+      @click="approveBooking(b)"
+    >
+      Approve Booking
+    </button>
+
+    <div
+      v-if="b.meetingLink"
+      class="meetingLink"
+    >
+
+      <a
+        :href="b.meetingLink"
+        target="_blank"
+      >
+        Join Meeting
+      </a>
+
+    </div>
+
+  </div>
+
+</section>
     </section>
   </DashboardLayout>
 </template>
@@ -269,13 +639,43 @@ export default {
       creatingResource: false,
       deletingId: null,
       selectedStudentId: "",
+      dashboard: {
+  totalHours: 0,
+  totalEarnings: 0,
+  totalSessions: 0,
+  totalStudents: 0
+},
+loadingDashboard: false,
+sessionForm: {
+  studentId: "",
+  resourceId: "",
+  duration: "",
+  notes: ""
+},
+rateForm: {
+  hourlyRate: ""
+},
+sessions: [],
+loadingSessions: false,
+availabilityForm: {
+  timezone: "Europe/London",
+
+  availability: [
+    {
+      day: "Monday",
+      startHour: "",
+      endHour: ""
+    }
+  ]
+},
+bookings: []  
     };
   },
 
   computed: {
     activeTab() {
       const tab = (this.$route.query.tab || "dashboard").toString();
-      const allowed = ["dashboard", "students", "resources", "assignments"];
+      const allowed = ["dashboard", "students", "resources", "bookings"];
       return allowed.includes(tab) ? tab : "dashboard";
     },
     filteredStudents() {
@@ -295,26 +695,56 @@ export default {
     },
   },
 
-  watch: {
-    activeTab: {
-      immediate: true,
-      handler(tab) {
-        if (tab === "students" && this.students.length === 0)
+ watch: {
+  activeTab: {
+    immediate: true,
+
+    handler(tab) {
+
+      if (
+        tab === "students" &&
+        this.students.length === 0
+      ) {
+        this.fetchStudents();
+      }
+
+      if (
+        tab === "resources" &&
+        this.resources.length === 0
+      ) {
+
+        if (this.students.length === 0) {
           this.fetchStudents();
-        if (tab === "resources" && this.resources.length === 0) {
-          if (this.students.length === 0) this.fetchStudents();
+        }
+
+        this.fetchResources();
+      }
+
+      if (tab === "dashboard") {
+
+        if (this.students.length === 0) {
+          this.fetchStudents();
+        }
+
+        if (this.resources.length === 0) {
           this.fetchResources();
         }
-        if (tab === "dashboard") {
-          if (this.students.length === 0) this.fetchStudents();
-          if (this.resources.length === 0) this.fetchResources();
-        }
-      },
+      }
+
+      // ✅ LOAD BOOKINGS + AVAILABILITY
+      if (tab === "bookings") {
+        this.fetchBookings();
+      }
+
     },
   },
+},
 
   mounted() {
     this.fetchMe();
+    this.fetchDashboard();
+    this.fetchSessions();
+    this.fetchBookings();
   },
 
   methods: {
@@ -322,6 +752,41 @@ export default {
       this.message = { text, type };
       setTimeout(() => (this.message.text = ""), 4000);
     },
+   async createSession() {
+  try {
+
+    await api.post(
+      "/tutor/sessions",
+      this.sessionForm
+    );
+
+    this.toast(
+      "Session logged successfully"
+    );
+
+    this.sessionForm = {
+      studentId: "",
+      resourceId: "",
+      duration: "",
+      notes: ""
+    };
+
+    // ✅ refresh dashboard
+    await this.fetchDashboard();
+
+    // ✅ refresh sessions list
+    await this.fetchSessions();
+
+  } catch (e) {
+
+    this.toast(
+      e?.response?.data?.message ||
+      "Failed to log session",
+      "error"
+    );
+
+  }
+},
 
     downloadUrl(fileUrl) {
       if (!fileUrl) return "";
@@ -378,6 +843,8 @@ export default {
       try {
         const { data } = await api.get("/auth/me");
         this.me = data;
+
+        this.rateForm.hourlyRate = data.hourlyRate || 20;
       } catch (e) {
         console.error("Failed to load user", e);
       }
@@ -526,20 +993,262 @@ export default {
         this.deletingId = null;
       }
     },
+
+    async fetchDashboard() {
+  this.loadingDashboard = true;
+
+  try {
+    const { data } = await api.get("/tutor/dashboard");
+
+    this.dashboard = data;
+  } catch (e) {
+    this.toast(
+      e?.response?.data?.message || "Failed to load dashboard",
+      "error"
+    );
+  } finally {
+    this.loadingDashboard = false;
+  }
+},
+
+async updateRate() {
+  const rate = Number(this.rateForm.hourlyRate);
+
+  if (!rate || rate < 0) {
+    this.toast("Enter a valid rate", "error");
+    return;
+  }
+
+  try {
+    const { data } = await api.put("/tutor/rate", {
+      hourlyRate: rate
+    });
+
+    this.toast("Rate updated to £" + data.hourlyRate);
+
+    // ✅ THIS IS THE FIX
+    this.me.hourlyRate = data.hourlyRate;
+
+  } catch (e) {
+    this.toast(
+      e?.response?.data?.message || "Failed to update rate",
+      "error"
+    );
+  }
+},
+async fetchSessions() {
+
+  this.loadingSessions = true;
+
+  try {
+
+    const { data } =
+    await api.get("/session/tutor/sessions");
+
+    // ✅ ensure progress always exists
+    this.sessions = data.map(session => ({
+      ...session,
+      showProgress: false,
+
+      progress: session.progress || {
+        completionStatus: "completed",
+        understandingLevel: 3,
+        resourceId: session.resourceId?._id || null,
+        tutorNotes: "",
+        skills: []
+      }
+    }));
+
+  } catch (e) {
+
+    this.toast(
+      e?.response?.data?.message ||
+      "Failed to load sessions",
+      "error"
+    );
+
+  } finally {
+
+    this.loadingSessions = false;
+
+  }
+},
+async submitProgress(session) {
+  try {
+
+    await api.put(
+      `/session/${session._id}/progress`,
+      {
+
+        resourceId: session.resourceId,
+
+        completionStatus:
+          session.progress.completionStatus,
+
+        understandingLevel:
+          session.progress.understandingLevel,
+
+        tutorNotes:
+          session.progress.tutorNotes,
+
+        skills:
+          session.progress.skills
+      }
+    );
+
+    this.toast("Progress updated");
+
+    // ✅ refresh sessions immediately
+    this.fetchSessions();
+
+  } catch (e) {
+
+    this.toast(
+      "Failed to update progress",
+      "error"
+    );
+  }
+},
+
+async deleteProgress(session) {
+
+  try {
+
+    await api.delete(
+      `/session/${session._id}/progress`
+    );
+
+    session.progress = {
+      completionStatus: "not_completed",
+      understandingLevel: 3,
+      tutorNotes: "",
+      skills: []
+    };
+
+    this.toast("Progress deleted");
+
+    await this.fetchSessions();
+
+  } catch (e) {
+
+    this.toast(
+      "Failed to delete progress",
+      "error"
+    );
+
+  }
+
+},
+
+addAvailability() {
+
+  this.availabilityForm.availability.push({
+    day: "Monday",
+    startHour: "",
+    endHour: ""
+  });
+
+},
+
+async saveAvailability() {
+
+  try {
+
+    await api.put(
+      "/booking/availability",
+      this.availabilityForm
+    );
+
+    this.toast(
+      "Availability updated"
+    );
+
+  } catch (e) {
+
+    this.toast(
+      "Failed to save availability",
+      "error"
+    );
+
+  }
+
+},
+async fetchBookings() {
+
+  try {
+
+    const { data } =
+      await api.get("/booking/my");
+
+    this.bookings = data;
+
+  } catch (e) {
+
+    console.error(e);
+
+  }
+
+},
+
+async approveBooking(booking) {
+
+  try {
+
+    await api.put(
+      `/booking/${booking._id}/approve`
+    );
+
+    this.toast(
+      "Booking approved"
+    );
+
+    this.fetchBookings();
+
+  } catch (e) {
+
+    this.toast(
+      "Failed to approve booking",
+      "error"
+    );
+
+  }
+
+},
+
+
+
   },
 };
 </script>
 
 <style scoped>
+:root {
+  --primary: #4f46e5;
+  --primary-soft: rgba(79, 70, 229, 0.12);
+  --danger: #dc2626;
+  --success: #16a34a;
+  --bg: #f8fafc;
+  --card: rgba(255, 255, 255, 0.92);
+  --border: rgba(15, 23, 42, 0.12);
+  --text: #0f172a;
+  --muted: #64748b;
+}
+
+/* GLOBAL */
 .pageTitle {
-  margin: 0 0 10px;
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.5px;
 }
 
 .headerRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 18px;
+  padding: 8px 2px;
 }
 
 .headerActions {
@@ -547,158 +1256,340 @@ export default {
   gap: 10px;
 }
 
+/* BUTTONS */
+.refreshBtn,
+.logoutBtn,
+.btn,
+.dangerBtn,
+.saveProgressBtn,
+.deleteProgressBtn {
+  transition: all 0.2s ease;
+  font-weight: 600;
+}
+
+/* Refresh */
 .refreshBtn {
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(15, 23, 42, 0.15);
-  background: #f1f5f9;
+  padding: 9px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
   cursor: pointer;
-  font-weight: 500;
 }
 .refreshBtn:hover {
-  background: rgba(79, 70, 229, 0.1);
-  color: #4f46e5;
+  background: var(--primary-soft);
+  color: var(--primary);
+  transform: translateY(-1px);
 }
 
+/* Logout */
 .logoutBtn {
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(15, 23, 42, 0.15);
-  background: white;
+  padding: 9px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #fff;
   cursor: pointer;
-  font-weight: 500;
 }
 .logoutBtn:hover {
-  background: rgba(239, 68, 68, 0.08);
-  color: #dc3545;
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--danger);
+  transform: translateY(-1px);
 }
 
+/* Primary */
+.btn {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: none;
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.18);
+}
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(79, 70, 229, 0.25);
+}
+
+/* Danger */
+.dangerBtn {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: none;
+  background: var(--danger);
+  color: white;
+}
+.dangerBtn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* LINKS */
+.linkBtn {
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* MESSAGE */
 .message {
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: 14px;
   margin-bottom: 14px;
-  border: 1px solid rgba(15, 23, 42, 0.1);
+  border: 1px solid var(--border);
+  font-weight: 500;
 }
 .message.success {
-  background: rgba(34, 197, 94, 0.12);
+  background: rgba(22, 163, 74, 0.10);
 }
 .message.error {
-  background: rgba(239, 68, 68, 0.12);
+  background: rgba(220, 38, 38, 0.10);
 }
 
+/* CARD */
 .card {
-  background: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 14px;
-  padding: 18px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  backdrop-filter: blur(8px);
 }
 
+/* GRID STATS */
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 10px;
+  gap: 14px;
+  margin-top: 14px;
 }
 
 .stat {
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 12px;
-  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  background: white;
+  transition: transform 0.2s ease;
 }
-.big {
-  font-size: 1.6rem;
-  font-weight: 800;
+.stat:hover {
+  transform: translateY(-2px);
 }
 
+.big {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--text);
+}
+
+/* INPUTS */
 .input {
   width: 100%;
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(15, 23, 42, 0.15);
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
   margin: 10px 0;
+  font-size: 14px;
+  outline: none;
+  transition: border 0.2s ease;
+  background: white;
+}
+.input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
-.formGrid {
-  display: grid;
-  gap: 10px;
+/* TEXT */
+.muted {
+  color: var(--muted);
 }
-
-.assignBox {
-  margin-top: 6px;
-}
-
-.multi {
-  min-height: 110px;
-}
-
 .small {
   font-size: 0.9rem;
 }
 
+/* LIST */
 .list {
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 12px;
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 12px;
-  gap: 10px;
-}
-.grow {
-  flex: 1;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: white;
 }
 
-.muted {
-  color: #475569;
-}
-
+/* SELECTED BOX */
 .selected {
   margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: rgba(79, 70, 229, 0.08);
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--primary-soft);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.buttonRow {
+/* FORMS */
+.formGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.assignBox {
+  margin-top: 8px;
+}
+
+.multi {
+  min-height: 120px;
+}
+
+/* SESSION CARD */
+.sessionCard {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 14px;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* BADGE */
+.resourceBadge {
+  margin-top: 8px;
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* PROGRESS */
+.progressWrapper {
+  margin-top: 14px;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--primary-soft);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+.progressHeader:hover {
+  transform: translateY(-1px);
+  background: rgba(79, 70, 229, 0.18);
+}
+
+.dropdownIcon {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+/* PROGRESS BOX */
+.progressBox {
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 14px;
+  background: white;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.progressBox select,
+.progressBox textarea,
+.progressBox input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  outline: none;
+}
+
+.progressBox textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+/* LABELS */
+.smallLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* PROGRESS ACTIONS */
+.progressActions {
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
+  margin-top: 10px;
 }
 
-.btn {
-  padding: 9px 12px;
-  border: 0;
+.saveProgressBtn {
+  padding: 10px 12px;
   border-radius: 10px;
-  background: #4f46e5;
+  border: none;
+  background: var(--primary);
   color: white;
+  font-weight: 700;
   cursor: pointer;
 }
+.saveProgressBtn:hover {
+  transform: translateY(-1px);
+}
 
-.dangerBtn {
-  padding: 9px 12px;
-  border: 0;
+.deleteProgressBtn {
+  padding: 10px 12px;
   border-radius: 10px;
-  background: #dc3545;
+  border: none;
+  background: var(--danger);
   color: white;
+  font-weight: 700;
   cursor: pointer;
 }
+.deleteProgressBtn:hover {
+  opacity: 0.9;
+}
 
-.linkBtn {
-  border: 0;
-  background: transparent;
-  color: #4f46e5;
-  cursor: pointer;
-  text-decoration: underline;
+/* TRANSITIONS */
+button,
+.row,
+.stat,
+.progressHeader {
+  transition: all 0.2s ease;
+}
+
+.submissionReviewBox {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(15,23,42,0.04);
+}
+
+.submissionItem {
+  padding: 10px;
+  border-radius: 10px;
+  background: white;
+  border: 1px solid rgba(15,23,42,0.08);
+  margin-top: 10px;
 }
 </style>

@@ -63,8 +63,11 @@ export const getStudentResources = async (req, res) => {
     const resources = await Resource.find(filter)
       .sort({ createdAt: -1 })
       .populate("createdBy", "_id name role")
+      .populate("progress.updatedBy", "_id name role")
+      .populate("submissions.studentId", "_id name")
       .lean();
 
+      
     return res.json(resources);
   } catch (err) {
     console.error("getStudentResources error:", err);
@@ -102,5 +105,46 @@ export const dismissResource = async (req, res) => {
   } catch (err) {
     console.error("dismissResource error:", err);
     return res.status(500).json({ message: err.message });
+  }
+};
+
+export const submitResourceWork = async (req, res) => {
+  try {
+    const resource = await Resource.findById(req.params.id);
+
+    if (!resource) {
+      return res.status(404).json({
+        message: "Resource not found"
+      });
+    }
+
+    resource.submissions.push({
+      studentId: req.user._id,
+
+      message: req.body.message || "",
+
+      file: req.file
+        ? {
+            originalName: req.file.originalname,
+            filename: req.file.filename,
+            url: `/uploads/submissions/${req.file.filename}`,
+            mimetype: req.file.mimetype,
+            size: req.file.size
+          }
+        : undefined
+    });
+
+    await resource.save();
+
+    res.json({
+      message: "Work submitted successfully"
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: "Failed to submit work"
+    });
   }
 };

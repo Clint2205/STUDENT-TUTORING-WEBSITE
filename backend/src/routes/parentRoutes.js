@@ -7,8 +7,10 @@ import {
   createChild,
   listChildren,
   getChildResources,
-  hideChildResource
+  hideChildResource,
+  getChildProgress
 } from "../controllers/parentController.js";
+
 
 const router = express.Router();
 
@@ -18,6 +20,7 @@ router.use(requireRole("parent"));
 router.post("/children", createChild);
 router.get("/children", listChildren);
 router.get("/children/:childUserId/resources", getChildResources);
+router.get("/progress/:childUserId", getChildProgress);
 router.post("/children/:childUserId/hide/:resourceId", hideChildResource);
 
 export default router;

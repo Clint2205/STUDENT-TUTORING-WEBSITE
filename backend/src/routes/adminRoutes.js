@@ -8,7 +8,10 @@ import {
   rejectUser,
   getResources,
   createResource,
-  deleteResource
+  deleteResource,
+  getTutorPayments,
+  markTutorPaid,
+  getPaymentHistory
 } from "../controllers/adminController.js";
 import { protect, adminOnly } from "../middleware/auth.middleware.js";
 
@@ -26,6 +29,20 @@ router.get("/resources", protect, adminOnly, getResources);
 router.post("/resources", protect, adminOnly, createResource);
 router.delete("/resources/:id", protect, adminOnly, deleteResource);
 router.post("/resources/upload",protect,adminOnly,upload.single("file"),createResourceWithUpload);
+router.get("/tutor-payments", protect, adminOnly, getTutorPayments);
+router.put("/tutor-payments/:id/mark-paid", protect, adminOnly, markTutorPaid);
+router.put(
+  "/tutor-payments/:id/mark-paid",
+  protect,
+  adminOnly,
+  markTutorPaid
+);
 
+router.get(
+  "/payment-history",
+  protect,
+  adminOnly,
+  getPaymentHistory
+);
 
 export default router;

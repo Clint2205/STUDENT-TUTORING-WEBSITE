@@ -9,6 +9,8 @@ import ParentDashboard from "../pages/ParentDashboard.vue";
 import StudentDashboard from "../pages/StudentDashboard.vue";
 import TutorDashboard from "../pages/TutorDashboard.vue";
 import AdminDashboard from "../pages/AdminDashboard.vue";
+import ParentSchedule from "../pages/ParentSchedule.vue";
+import path from "path";
 
 const routes = [
   { path: "/", name: "Login", component: LoginPage },
@@ -21,6 +23,8 @@ const routes = [
   path: "/change-password",
   component: () => import("../pages/ChangePassword.vue")
 }
+,
+  { path: "/parent/schedule", name: "ParentSchedule", component: ParentSchedule, meta: { requiresAuth: true, role: "parent" } }
 ];
 
 const router = createRouter({

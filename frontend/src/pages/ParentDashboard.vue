@@ -170,6 +170,91 @@
 
           <div class="divider"></div>
 
+<h3 class="subTitle">Student Progress</h3>
+
+<p v-if="!selectedChildId" class="muted">
+  Select a child to view progress.
+</p>
+
+<p v-else-if="loadingProgress" class="muted">
+  Loading progress...
+</p>
+
+<div v-else>
+
+  <p
+    v-if="progressSessions.length === 0"
+    class="muted"
+  >
+    No progress logged yet.
+  </p>
+
+  <div
+    v-else
+    class="resourceList"
+  >
+    <article
+      v-for="s in progressSessions"
+      :key="s._id"
+      class="resourceCard"
+    >
+
+      <div class="resourceTop">
+        <div class="resourceTitle">
+          Session with
+          {{ s.tutorId?.name || "Tutor" }}
+        </div>
+
+        <div class="pill">
+          {{ s.progress?.completionStatus }}
+        </div>
+      </div>
+
+      <div class="childMeta">
+
+        <div>
+          <b>Resource:</b>
+          {{ s.resourceId?.title || "No resource linked" }}
+        </div>
+
+        <div>
+          <b>Understanding:</b>
+          {{ s.progress?.understandingLevel || 0 }}/5
+        </div>
+
+        <div>
+          <b>Duration:</b>
+          {{ s.duration }}h
+        </div>
+
+        <!-- <div>
+          <b>Earnings:</b>
+          £{{ s.totalAmount }}
+        </div> -->
+
+        <div>
+          <b>Date:</b>
+          {{
+            new Date(s.createdAt)
+              .toLocaleDateString()
+          }}
+        </div>
+
+      </div>
+
+      <p
+        class="resourceNotes"
+        v-if="s.progress?.tutorNotes"
+      >
+        {{ s.progress.tutorNotes }}
+      </p>
+
+    </article>
+  </div>
+</div>
+
+          <div class="divider"></div>
+
           <h3 class="subTitle">Resources</h3>
 
           <p v-if="!selectedChildId" class="muted">Select a child to view their resources.</p>
@@ -206,6 +291,8 @@
           </div>
         </div>
       </section>
+
+   
     </div>
   </DashboardLayout>
 </template>
@@ -245,8 +332,19 @@ export default {
       selectedChild: null,
 
       resources: [],
-      loadingResources: false
+      loadingResources: false,
+      progressSessions: [],
+      loadingProgress: false,
+      bookingForm: {
+      tutorId: "",
+      studentId: "",
+      startTime: "",
+      endTime: "",
+      subject: "",
+      notes: ""
+    },
     };
+    
   },
 
   watch: {
@@ -280,10 +378,19 @@ export default {
     },
 
     async selectedChildId(newId) {
-      this.selectedChild = this.children.find(c => c._id === newId) || null;
-      this.resources = [];
-      if (newId) await this.loadResources(newId);
-    }
+  this.selectedChild =
+    this.children.find(c => c._id === newId) || null;
+
+  this.resources = [];
+  this.progressSessions = [];
+
+  if (newId) {
+    await Promise.all([
+      this.loadResources(newId),
+      this.loadProgress(newId)
+    ]);
+  }
+}
   },
 
   async created() {
@@ -391,6 +498,79 @@ logout() {
         this.loadingResources = false;
       }
     },
+
+    async loadProgress(childUserId) {
+  this.loadingProgress = true;
+
+  try {
+    const res = await axios.get(
+      `/api/parent/progress/${childUserId}`
+    );
+
+    this.progressSessions = res.data.sessions || [];
+
+  } catch (e) {
+    console.error("Load progress failed:", e);
+
+    this.showMessage(
+      "Failed to load progress.",
+      "error"
+    );
+
+    this.progressSessions = [];
+
+  } finally {
+    this.loadingProgress = false;
+  }
+},
+
+async createBooking() {
+
+  if (!this.selectedChildId) {
+    this.showMessage(
+      "Please select a child first",
+      "error"
+    );
+    return;
+  }
+
+  try {
+
+    await axios.post(
+      "/api/booking",
+      {
+        ...this.bookingForm,
+        studentId: this.selectedChildId
+      }
+    );
+
+    this.showMessage(
+      "Booking requested ✅",
+      "success"
+    );
+
+    this.bookingForm = {
+      tutorId: "",
+      studentId: "",
+      startTime: "",
+      endTime: "",
+      subject: "",
+      notes: ""
+    };
+
+  } catch (e) {
+
+    console.error(e);
+
+    this.showMessage(
+      e?.response?.data?.message ||
+      "Booking failed",
+      "error"
+    );
+
+  }
+
+},
 
     async dismissResource(resourceId) {
       if (!this.selectedChildId) return;

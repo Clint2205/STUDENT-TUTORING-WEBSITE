@@ -8,8 +8,13 @@ import {
   getMyResources,
   createTutorResource,
   deleteTutorResource,
-  uploadTutorResource // ✅ add this
+  uploadTutorResource ,
+  // ✅ add this
+  tutorDashboard,
+  updateHourlyRate,
+  updateResourceProgress
 } from "../controllers/tutorController.js"
+import { createSession } from "../controllers/tutorController.js";
 
 const router = express.Router()
 
@@ -35,8 +40,13 @@ router.get("/students", getMyStudents)
 router.get("/resources", getMyResources)
 router.post("/resources", createTutorResource)
 router.delete("/resources/:id", deleteTutorResource)
+router.post("/sessions", createSession);
+router.get("/dashboard", tutorDashboard) 
+router.put("/rate", updateHourlyRate);
+
 
 // ✅ File upload endpoint
 router.post("/resources/upload", upload.single("file"), uploadTutorResource)
+router.put("/resources/:id/progress", updateResourceProgress) 
 
 export default router

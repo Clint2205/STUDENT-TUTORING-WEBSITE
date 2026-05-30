@@ -30,7 +30,14 @@ const userSchema = new mongoose.Schema(
     // ✅ NEW: child profile
     childName: { type: String, trim: true, default: "" },
     age: { type: Number, default: null },
+     hourlyRate: {
+    type: Number,
+    default: 20,
+    min: 0
+  },
 
+
+  
     subjects: [{ type: String, trim: true, lowercase: true, index: true }],
 
     // ✅ tutorIds is ARRAY (no default null inside)
@@ -59,11 +66,28 @@ const userSchema = new mongoose.Schema(
     type: Boolean,
     default: false
   },
+  availability: [
+  {
+    day: String,
+
+    startHour: String,
+
+    endHour: String
+  }
+],
+
+timezone: {
+  type: String,
+  default: "Europe/London"
+},
 
     // ✅ hidden/dismissed resources
     hiddenResourceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Resource" }],
   },
-  { timestamps: true }
+  { timestamps: true },
+
+  
+  
 );
 
 export default mongoose.model("User", userSchema);

@@ -13,6 +13,8 @@ import adminCheckRoutes from "./routes/adminCheck.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import parentRoutes from "./routes/parentRoutes.js";
+import sessionRoutes from "./routes/sessionRoutes.js";
+import bookingRoutes from "./routes/bookingRoutes.js";
 
 const app = express();
 console.log("ENV CHECK:", process.env.YAHOO_USER);
@@ -39,7 +41,8 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use("/api/tutor", tutorRoutes)
 app.use("/api/student", studentRoutes);
 app.use("/api/parent", parentRoutes);
-
+app.use("/api/session", sessionRoutes);
+app.use("/api/booking", bookingRoutes);
 
 const PORT = process.env.PORT || 5000;
 

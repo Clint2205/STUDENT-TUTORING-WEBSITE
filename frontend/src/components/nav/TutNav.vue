@@ -3,7 +3,7 @@
     <router-link :class="linkClass('dashboard')" to="/tutor?tab=dashboard">Dashboard</router-link>
     <router-link :class="linkClass('students')" to="/tutor?tab=students">My Students</router-link>
     <router-link :class="linkClass('resources')" to="/tutor?tab=resources">Resources</router-link>
-    <router-link :class="linkClass('assignments')" to="/tutor?tab=assignments">Assignments</router-link>
+    <router-link :class="linkClass('bookings')" to="/tutor?tab=bookings">Bookings</router-link>
   </nav>
 </template>
 

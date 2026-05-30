@@ -4,8 +4,8 @@
   <nav class="nav">
     <router-link :class="linkClass('dashboard')" to="/student?tab=dashboard">Dashboard</router-link>
     <router-link :class="linkClass('resources')" to="/student?tab=resources">Resources</router-link>
-    <router-link :class="linkClass('assignments')" to="/student?tab=assignments">Assignments</router-link>
-    <router-link :class="linkClass('schedule')" to="/student?tab=schedule">Schedule</router-link>
+  
+    <router-link :class="linkClass('bookings')" to="/student?tab=bookings">Bookings</router-link>
   </nav>
 </template>
 
