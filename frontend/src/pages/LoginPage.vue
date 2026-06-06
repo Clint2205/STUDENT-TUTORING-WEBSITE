@@ -5,10 +5,18 @@
     <!-- Left: Marketing / About -->
     <section class="brand">
       <div class="brand-inner">
+        <div class="hero-center">
         <div class="logo">
-          <span class="logo-mark">🎓</span>
-          <span class="logo-text">TutorBridge</span>
-        </div>
+  <div class="logo-icon">
+    <!-- SVG graduation cap -->
+    <svg viewBox="0 0 64 64" class="logo-svg" aria-hidden="true">
+      <path d="M32 6L2 20l30 14 26-12v18h4V20L32 6z" />
+      <path d="M12 30v10c0 6 9 12 20 12s20-6 20-12V30l-20 10-20-10z" />
+    </svg>
+  </div>
+
+  <span class="logo-text">BrainGym</span>
+</div>
 
         <h1 class="headline">Support that helps every learner thrive</h1>
 
@@ -22,8 +30,11 @@
           <span class="dot">•</span>
           <a class="about-link" href="#contact">Contact</a>
         </div>
+        </div>
 
         <!-- Existing Image placeholders (click to open modal) -->
+         <div class="media-row">
+          <div class="media-left">
         <div class="image-grid">
           <div class="image-card">
             <div class="image-title">Director</div>
@@ -31,14 +42,14 @@
             <button
               class="imgBtn"
               type="button"
-              @click="openModal({ src: directorimage, title: 'Director', caption: 'Sir Clint' })"
+              @click="openModal({ src: directorimage, title: 'Director', caption: 'Ms Faith' })"
               aria-label="Open Director image"
             >
               <img class="img" :src="directorimage" alt="Image of Director" />
               <div class="zoomBadge">🔍 View</div>
             </button>
 
-            <div class="image-caption">Sir Clint</div>
+            <div class="image-caption">Ms Faith</div>
           </div>
 
           <div class="image-card">
@@ -54,9 +65,36 @@
               <div class="zoomBadge">🔍 View</div>
             </button>
 
-            <div class="image-caption">Tutor Bridge.</div>
+            <div class="image-caption">BrainGym</div>
           </div>
+
+         
         </div>
+        </div>
+
+        <div class="media-right">
+        <div class="video-section">
+  <div class="video-card">
+    <div class="video-title">
+      See How Personal Tutoring Makes a Difference
+    </div>
+
+    <div class="video-wrapper">
+      <iframe
+        src="https://www.youtube.com/embed/6wQhQhZ8Qn0"
+        title="Tutoring and Learning Support"
+        allowfullscreen>
+      </iframe>
+    </div>
+
+    <p class="video-caption">
+      Discover how personalised tutoring helps students build confidence,
+      improve grades, and enjoy learning.
+    </p>
+  </div>
+</div>
+</div>
+</div>
 
         <!-- ✅ Tutors showcase (5 cards) -->
         <div class="tutor-section">
@@ -94,18 +132,27 @@
 
         <!-- About section -->
         <div id="about" class="info-card">
-          <h3>About TutorBridge</h3>
+          <h3>About BrainGym</h3>
           <p>
-            TutorBridge helps families find trusted tutors, supports students with learning goals,
+            BrainGym helps families find trusted tutors, supports students with learning goals,
             and gives tutors a simple way to manage learners. Admin approval ensures the platform
             stays safe and professional.
           </p>
         </div>
 
-        <div id="contact" class="info-card">
-          <h3>Contact</h3>
-          <p class="muted">Placeholder: email/phone/social links here later.</p>
-        </div>
+        <div id="contact" class="info-card contact-card">
+  <h3>Contact</h3>
+
+  <div class="contact-item">
+    <span class="label">Email</span>
+    <a href= "mailto:BrainzGym@hotmail.co.uk">BrainzGym@hotmail.co.uk</a>
+  </div>
+
+  <div class="contact-item">
+    <span class="label">Phone</span>
+    <a href= "tel:+447360098129">+44 7360 098129</a>
+  </div>
+</div>
       </div>
     </section>
 
@@ -285,13 +332,14 @@ import { login, register } from "../services/authService";
 import axios from "axios";
 
 import tutoringImage from "../assets/student being tutored.webp";
-import directorimage from "../assets/Graduation pic.jpeg";
+import directorimage from "../assets/WhatsApp Image 2026-04-09 at 22.49.11.jpeg";
 
 import tutor1 from "../assets/Faith2.jpeg";
 import tutor2 from "../assets/Mr. Ojwang.jpeg";
 import tutor3 from "../assets/Ms Faith.jpeg";
 import tutor4 from "../assets/teacher 1.jpeg";
 import tutor5 from "../assets/Victotr Odede.jpeg";
+import tutor6 from "../assets/WhatsApp Image 2026-04-14 at 19.17.22.jpeg";
 
 export default {
   name: "LoginPage",
@@ -352,7 +400,16 @@ export default {
           bio: "Warm, engaging lessons for young learners with clear progress updates for parents.",
           badges: ["KS3", "Encouraging"],
           photo: tutor5
-        }
+        },
+          {
+          id: 6,
+          name: "Walter Oburu ongere",
+          tag: "Business, Commerce, Economics, Global Perspectives, Geography",
+          bio: "Breaks down complex ideas into simple, real-world examples so students can actually understand and remember. Focuses on building confidence through step-by-step learning and practical thinking.",
+          badges: ["Concept Builder", "Real-World Thinker"],
+          photo: tutor6
+        },
+
       ],
 
       modal: {
@@ -559,38 +616,82 @@ if (response.data.forcePasswordChange) {
     linear-gradient(180deg, #ffffff, #f8fafc);
 }
 
-/* Left marketing section */
 .brand {
-  padding: 28px;
   display: flex;
-  align-items: stretch;
+  justify-content: center;   /* centers brand-inner horizontally */
+  align-items: flex-start;
 }
 
 .brand-inner {
-  width: 100%;
-  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 600px;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 18px;
+  justify-content: center; /* centers horizontally */
+  gap: 12px;
+
+  width: 100%;
+  margin: 20px auto 30px; /* space below + breathing room */
+  cursor: pointer;
+  transition: transform 0.25s ease;
 }
-.logo-mark {
+
+/* Icon container */
+.logo-icon {
   width: 40px;
   height: 40px;
   display: grid;
   place-items: center;
-  border-radius: 12px;
-  background: rgba(79, 70, 229, 0.12);
-  border: 1px solid rgba(79, 70, 229, 0.18);
-}
-.logo-text {
-  font-weight: 900;
-  letter-spacing: -0.02em;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4f46e5, #06b6d4);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
+/* SVG itself */
+.logo-svg {
+  width: 22px;
+  height: 22px;
+  fill: white;
+}
+
+/* Brand text */
+.logo-text {
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #111827;
+  transition: color 0.25s ease;
+}
+
+/* ✨ Hover animation */
+.logo:hover {
+  transform: translateY(-2px);
+}
+
+.logo:hover .logo-icon {
+  transform: rotate(-6deg) scale(1.05);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+}
+
+.logo:hover .logo-text {
+  color: #4f46e5;
+}
+.hero-center {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* 👈 THIS is the key */
+  text-align: center;
+  margin: 0 auto;
+  max-width: 600px;
+}
 .headline {
   font-size: 34px;
   line-height: 1.1;
@@ -631,7 +732,7 @@ if (response.data.forcePasswordChange) {
 .image-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 32px;
   margin: 18px 0;
 }
 
@@ -647,6 +748,57 @@ if (response.data.forcePasswordChange) {
   font-weight: 900;
   margin-bottom: 8px;
   letter-spacing: -0.01em;
+}
+
+.media-row {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  margin-top: 32px;
+}
+
+/* LEFT: protect width */
+.media-left {
+  flex: 1 1 700px;   /* 👈 important */
+  min-width: 600px;  /* 👈 prevents shrinking too much */
+}
+
+/* RIGHT: fixed sidebar feel */
+.media-right {
+  flex: 0 0 380px;   /* 👈 fixed width */
+}
+
+/* Make sure video card fits nicely */
+.video-section {
+  margin-top: 0;
+}
+
+/* Responsive: stack on mobile */
+@media (max-width: 980px) {
+  .media-row {
+    flex-direction: column;
+  }
+
+  .media-right {
+    position: static;
+  }
+}
+
+.video-wrapper {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+}
+
+.video-wrapper iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 12px;
+}
+.video-title {
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
 }
 
 .imgBtn {
@@ -679,8 +831,9 @@ if (response.data.forcePasswordChange) {
 
 .image-caption {
   margin-top: 8px;
-  font-size: 12px;
-  color: rgba(71, 85, 105, 0.9);
+  font-size: 15px;
+  color: rgba(63, 64, 66, 0.9);
+  font-weight: 500;
 }
 
 .zoomBadge {
@@ -1101,5 +1254,44 @@ kbd {
   .tutor-grid {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+.contact-card {
+  padding: 20px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  max-width: 400px;
+}
+
+.contact-card h3 {
+  margin-bottom: 12px;
+  font-size: 1.3rem;
+}
+
+.contact-item {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #f7f9fc;
+}
+
+.contact-item .label {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.contact-item a {
+  color: #1a73e8;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.contact-item a:hover {
+  text-decoration: underline;
 }
 </style>
