@@ -83,11 +83,20 @@ timezone: {
 
     // ✅ hidden/dismissed resources
     hiddenResourceIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Resource" }],
-  },
-  { timestamps: true },
+    // hidden bookings and notifications
+    hiddenBookings: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Booking",
+      default: []
+    }],
 
-  
-  
+    hiddenNotifications: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Notification",
+      default: []
+    }]
+  },
+  { timestamps: true }
 );
 
 export default mongoose.model("User", userSchema);

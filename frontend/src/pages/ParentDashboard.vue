@@ -27,6 +27,79 @@
         {{ message.text }}
       </div>
 
+      <!-- NOTIFICATIONS -->
+
+      <section class="card">
+  <h2>Notifications</h2>
+
+  <div
+    v-for="n in notifications"
+    :key="n._id"
+    class="notification"
+
+  >
+    <strong>{{ n.title }}</strong>
+    <p>{{ n.message }}</p>
+
+    <router-link
+      v-if="n.bookingId"
+      :to="`/parent?tab=bookings`"
+    >
+      View Booking
+    </router-link>
+   
+    <button
+  class="ghost danger"
+  @click="hideNotification(n._id)"
+>
+  Remove
+</button>
+  </div>
+
+  <p v-if="notifications.length === 0" class="muted">
+    No notifications yet
+  </p>
+</section>
+
+<section v-if="activeTab === 'bookings'" class="card">
+  <h2>Your Bookings</h2>
+
+  <p v-if="bookings.length === 0" class="muted">
+    No bookings found
+  </p>
+
+  <div v-else class="resourceList">
+    <article v-for="b in bookings" :key="b._id" class="resourceCard">
+
+      <div class="resourceTop">
+        <div class="resourceTitle">
+          {{ b.subject }} session
+        </div>
+
+        <div class="pill">
+          {{ b.status }}
+        </div>
+      </div>
+
+      <div class="childMeta">
+        <div><b>Tutor:</b> {{ b.tutorId?.name }}</div>
+        <div><b>Start:</b> {{ new Date(b.startTime).toLocaleString() }}</div>
+        <div><b>End:</b> {{ new Date(b.endTime).toLocaleString() }}</div>
+      </div>
+
+      <div class="actions">
+  <button
+    class="ghost danger"
+    @click="hideBooking(b._id)"
+  >
+    Remove from View
+  </button>
+</div>
+
+    </article>
+  </div>
+</section>
+
       <section class="grid">
         <!-- LEFT: Add Child -->
         <div class="card">
@@ -308,7 +381,10 @@ export default {
 
   data() {
     return {
+      activeTab: "dashboard",
       message: { text: "", type: "" },
+       notifications: [],
+      
 
       subjectOptions: [],
 
@@ -321,6 +397,7 @@ export default {
 
       matchingTutors: [],
       loadingTutors: false,
+      bookings: [],
 
       loading: false,
       createdLogin: { loginId: "", tempPassword: "" },
@@ -341,13 +418,26 @@ export default {
       startTime: "",
       endTime: "",
       subject: "",
-      notes: ""
+      notes: "",
+      
+     
     },
     };
     
   },
 
   watch: {
+
+   "$route.query.tab": {
+    immediate: true,
+    handler(tab) {
+      this.activeTab = tab || "dashboard";
+
+      if (this.activeTab === "bookings") {
+        this.fetchBookings();
+      }
+    }
+  },
     // ✅ tutor matching on subjects change (same endpoint as student registration)
     "form.subjects": {
       deep: true,
@@ -394,8 +484,15 @@ export default {
   },
 
   async created() {
+
+    
     await this.loadSubjects();
     await this.loadChildren();
+    await this.fetchNotifications();
+     if (this.activeTab === "bookings") {
+    this.fetchBookings();
+  }
+ 
   },
 
   methods: {
@@ -453,6 +550,25 @@ logout() {
         this.loadingChildren = false;
       }
     },
+
+  async fetchNotifications() {
+  try {
+    const { data } = await axios.get("/api/booking/notifications")
+    this.notifications = data
+  } catch (e) {
+    this.showMessage("Failed to load notifications", "error")
+  }
+},
+async fetchBookings() {
+  try {
+    const { data } = await axios.get("/api/booking/my")
+    this.bookings = data;
+
+  } catch (e) {
+    console.error(e)
+    this.showMessage("Failed to load bookings", "error")
+  }
+},
 
     async handleCreateChild() {
       if (this.loading) return;
@@ -581,7 +697,60 @@ async createBooking() {
         console.error("Dismiss failed:", e);
         this.showMessage("Failed to dismiss resource.", "error");
       }
-    }
+    },
+    async hideBooking(bookingId) {
+  try {
+
+    await axios.put(
+      `/api/booking/${bookingId}/hide`
+    );
+
+    this.bookings =
+      this.bookings.filter(
+        b => b._id !== bookingId
+      );
+
+    this.showMessage(
+      "Booking removed from view",
+      "success"
+    );
+
+  } catch (e) {
+    console.error(e);
+
+    this.showMessage(
+      "Failed to remove booking",
+      "error"
+    );
+  }
+},
+
+async hideNotification(id) {0
+  try {
+
+    await axios.put(
+      `/api/booking/notifications/${id}/hide`
+    );
+
+    this.notifications =
+      this.notifications.filter(
+        n => n._id !== id
+      );
+
+    this.showMessage(
+      "Notification removed",
+      "success"
+    );
+
+  } catch (e) {
+    console.error(e);
+
+    this.showMessage(
+      "Failed to remove notification",
+      "error"
+    );
+  }
+}
   }
 };
 </script>

@@ -190,6 +190,43 @@
     >
       View Booking
     </router-link>
+
+    <button
+    class="dangerBtn"
+    @click="hideNotification(n._id)"
+  >
+    Remove
+  </button>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Tutor Availability</h2>
+
+  <select v-model="selectedTutorId" @change="fetchAvailability">
+    <option value="">Select Tutor</option>
+    <option
+      v-for="t in me?.tutorIds || []"
+      :key="t._id"
+      :value="t._id"
+    >
+      {{ t.name }}
+    </option>
+  </select>
+
+  <div v-if="availabilityData">
+    <div
+      v-for="(slot, i) in availabilityData.availability"
+      :key="i"
+      class="row"
+    >
+      <div>
+        <strong>{{ slot.day }}</strong>
+        <div class="muted">
+          {{ slot.startHour }} → {{ slot.endHour }}
+        </div>
+      </div>
+    </div>
   </div>
 </section>
   
@@ -225,6 +262,13 @@
   >
     Join Lesson
   </a>
+
+  <button
+    class="dangerBtn"
+    @click="hideBooking(b._id)"
+  >
+    Remove from View
+  </button>
 </div>
       <h2>Book Lesson</h2>
 
@@ -299,6 +343,9 @@ export default {
 
       me: null,
       resources: [],
+      hiddenBookings: [],
+      availabilityData: null,
+      selectedTutorId: "",  
 
       loadingMe: false,
       loadingResources: false,
@@ -556,6 +603,32 @@ async fetchNotifications() {
   }
 
 },
+ async hideBooking(bookingId) {
+
+  try {
+
+    await api.put(
+      `/booking/bookings/${bookingId}/hide`
+    );
+
+    this.bookings = this.bookings.filter(
+      b => b._id !== bookingId
+    );
+
+    this.toast(
+      "Booking removed from view"
+    );
+
+  } catch (e) {
+
+    this.toast(
+      "Failed to remove booking",
+      "error"
+    );
+
+  }
+
+},
 
 async fetchBookings() {
 
@@ -564,7 +637,9 @@ async fetchBookings() {
     const { data } =
       await api.get("/booking/my")
 
-    this.bookings = data
+   this.bookings = data.filter(
+  b => !this.hiddenBookings.includes(b._id)
+)
 
   } catch (e) {
 
@@ -576,6 +651,50 @@ async fetchBookings() {
   }
 
 },
+
+async hideNotification(id) {
+
+  try {
+
+    await api.put(
+      `/booking/notifications/${id}/hide`
+    );
+
+    this.notifications =
+      this.notifications.filter(
+        n => n._id !== id
+      );
+
+    this.toast(
+      "Notification removed"
+    );
+
+  } catch (e) {
+
+    this.toast(
+      "Failed to remove notification",
+      "error"
+    );
+
+  }
+
+},
+
+async fetchAvailability() {
+  if (!this.selectedTutorId) return;
+
+  try {
+    const { data } = await api.get(
+      `/booking/availability/${this.selectedTutorId}`
+    );
+
+    this.availabilityData = data;
+  } catch (e) {
+    this.toast("Failed to load availability", "error");
+  }
+},
+
+
 
 
   }

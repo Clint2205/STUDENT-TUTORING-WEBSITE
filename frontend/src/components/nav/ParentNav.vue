@@ -3,9 +3,10 @@
 <template>
   <nav class="nav">
     <router-link to="/parent">Dashboard</router-link>
-    <router-link to="/parent/assignments">Assignments</router-link>
-   <router-link to="/parent/schedule">
-  Schedule
+   
+   
+    <router-link to="/parent/schedule">
+  Bookings
 </router-link>
     <router-link to="/parent/payments">Payments</router-link>
   </nav>

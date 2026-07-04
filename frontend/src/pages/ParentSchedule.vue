@@ -1,3 +1,5 @@
+<!-- ParentSchedule.vue -->
+
 <template>
   <DashboardLayout>
     <template #nav>
@@ -5,6 +7,7 @@
     </template>
 
     <div class="wrap">
+      
 
       <section class="card">
 
@@ -54,7 +57,30 @@
             </option>
           </select>
         </div>
+<div
+  v-if="availabilityData"
+  class="availabilityCard"
+>
 
+  <h3>Weekly Tutor Availability</h3>
+
+  <div
+    v-for="(slot,index) in availabilityData.availability"
+    :key="index"
+    class="availabilityRow"
+  >
+
+    <strong>{{ slot.day }}</strong>
+
+    <span>
+      {{ slot.startHour }}
+      -
+      {{ slot.endHour }}
+    </span>
+
+  </div>
+
+</div>
         <input
           type="datetime-local"
           v-model="bookingForm.startTime"
@@ -110,6 +136,7 @@ export default {
       children: [],
       selectedChildId: "",
       selectedChild: null,
+      availabilityData: null,
 
       bookingForm: {
         tutorId: "",
@@ -121,13 +148,25 @@ export default {
     };
   },
 
-  watch: {
-    selectedChildId(newId) {
-      this.selectedChild =
-        this.children.find(c => c._id === newId) || null;
-    }
+ watch: {
+  selectedChildId(newId) {
+    this.selectedChild =
+      this.children.find(c => c._id === newId) || null;
+
+    this.availabilityData = null;
+    this.bookingForm.tutorId = "";
   },
 
+  "bookingForm.tutorId"(newTutorId) {
+
+    if (newTutorId) {
+      this.fetchAvailability(newTutorId);
+    } else {
+      this.availabilityData = null;
+    }
+
+  }
+},
   async created() {
     await this.loadChildren();
   },
@@ -151,6 +190,26 @@ export default {
       }
 
     },
+
+    async fetchAvailability(tutorId) {
+
+  try {
+
+    const { data } = await axios.get(
+      `/api/booking/availability/${tutorId}`
+    );
+
+    this.availabilityData = data;
+
+  } catch (e) {
+
+    console.error(e);
+
+    this.availabilityData = null;
+
+  }
+
+},
 
     async createBooking() {
 
@@ -219,5 +278,28 @@ export default {
 
 .field {
   margin-bottom: 14px;
+}
+
+.availabilityCard {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.availabilityCard h3 {
+  margin-bottom: 12px;
+}
+
+.availabilityRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.availabilityRow:last-child {
+  border-bottom: none;
 }
 </style>

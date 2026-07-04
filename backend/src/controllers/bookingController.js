@@ -115,7 +115,14 @@ export const getMyBookings = async (req, res) => {
       filter.bookedBy = req.user._id;
     }
 
-    const bookings = await Booking.find(filter)
+    const user = await User.findById(req.user._id);
+
+    const bookings = await Booking.find({
+      ...filter,
+      _id: {
+        $nin: user.hiddenBookings || []
+      }
+    })
       .populate("studentId", "name email")
       .populate("tutorId", "name email")
       .populate("bookedBy", "name email role")
@@ -124,6 +131,8 @@ export const getMyBookings = async (req, res) => {
     res.json(bookings);
 
   } catch (err) {
+
+    console.error(err);
 
     res.status(500).json({
       message: err.message
@@ -237,4 +246,82 @@ async (req, res) => {
 
   }
 
+};
+export const hideNotification = async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $addToSet: {
+          hiddenNotifications: req.params.id
+        }
+      }
+    );
+
+    res.json({
+      message: "Notification hidden"
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: "Failed to hide notification"
+    });
+  }
+};
+export const hideBooking = async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(
+      req.user._id,
+      {
+        $addToSet: {
+          hiddenBookings: req.params.id
+        }
+      }
+    );
+
+    res.json({
+      message: "Booking hidden"
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message: "Failed to hide booking"
+    });
+  }
+};
+export const getNotifications = async (req, res) => {
+  try {
+
+    const user = await User.findById(
+      req.user._id
+    );
+
+    const notifications =
+      await Notification.find({
+        userId: req.user._id,
+        _id: {
+          $nin:
+            user.hiddenNotifications || []  
+        }
+      })
+      .sort({
+        createdAt: -1
+      });
+
+    res.json(
+      notifications
+    );
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      message:
+        "Failed to fetch notifications"
+    });
+  }
 };

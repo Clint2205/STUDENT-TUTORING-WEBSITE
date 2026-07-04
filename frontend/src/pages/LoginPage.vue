@@ -2,7 +2,7 @@
 
 <template>
   <div class="auth-shell">
-    <!-- Left: Marketing / About -->
+    <!-- Marketing / About -->
     <section class="brand">
       <div class="brand-inner">
         <div class="hero-center">
@@ -96,6 +96,35 @@
 </div>
 </div>
 
+<div class="content-row">
+  <div class="about-col">
+
+    <div id="about" class="info-card">
+      <h3>About BrainGym</h3>
+      <p>
+        BrainGym helps families find trusted tutors, supports students with learning goals,
+        and gives tutors a simple way to manage learners. Admin approval ensures the platform
+        stays safe and professional.
+      </p>
+    </div>
+
+    <div id="contact" class="info-card contact-card">
+      <h3>Contact</h3>
+
+      <div class="contact-item">
+        <span class="label">Email</span>
+        <a href="mailto:BrainzGym@hotmail.co.uk">BrainzGym@hotmail.co.uk</a>
+      </div>
+
+      <div class="contact-item">
+        <span class="label">Phone</span>
+        <a href="tel:+447360098129">+44 7360 098129</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
         <!-- ✅ Tutors showcase (5 cards) -->
         <div class="tutor-section">
           <h3 class="section-title">Meet our tutors</h3>
@@ -131,28 +160,8 @@
         </div>
 
         <!-- About section -->
-        <div id="about" class="info-card">
-          <h3>About BrainGym</h3>
-          <p>
-            BrainGym helps families find trusted tutors, supports students with learning goals,
-            and gives tutors a simple way to manage learners. Admin approval ensures the platform
-            stays safe and professional.
-          </p>
-        </div>
 
-        <div id="contact" class="info-card contact-card">
-  <h3>Contact</h3>
 
-  <div class="contact-item">
-    <span class="label">Email</span>
-    <a href= "mailto:BrainzGym@hotmail.co.uk">BrainzGym@hotmail.co.uk</a>
-  </div>
-
-  <div class="contact-item">
-    <span class="label">Phone</span>
-    <a href= "tel:+447360098129">+44 7360 098129</a>
-  </div>
-</div>
       </div>
     </section>
 
@@ -608,8 +617,9 @@ if (response.data.forcePasswordChange) {
   min-height: 100vh;
   width: 100%;
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 0;
+  grid-template-columns: 1.4fr 0.9fr; /* left bigger, right smaller */
+  gap: 40px;
+  align-items: stretch;
   background:
     radial-gradient(1200px 600px at 10% 10%, rgba(236, 254, 255, 0.95), transparent 60%),
     radial-gradient(1000px 600px at 90% 0%, rgba(238, 242, 255, 0.95), transparent 55%),
@@ -617,17 +627,15 @@ if (response.data.forcePasswordChange) {
 }
 
 .brand {
+  width: 100%;
   display: flex;
-  justify-content: center;   /* centers brand-inner horizontally */
-  align-items: flex-start;
+  justify-content: center;
 }
 
 .brand-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  max-width: 600px;
+  width: 100%;
+  
+  margin: 0 auto;
 }
 
 .logo {
@@ -684,13 +692,9 @@ if (response.data.forcePasswordChange) {
   color: #4f46e5;
 }
 .hero-center {
+  /* grid-column: 1 / -1; */
   width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;   /* 👈 THIS is the key */
   text-align: center;
-  margin: 0 auto;
-  max-width: 600px;
 }
 .headline {
   font-size: 34px;
@@ -700,11 +704,13 @@ if (response.data.forcePasswordChange) {
 }
 
 .subhead {
-  margin: 0 0 14px;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto 14px;
+  text-align: center;
   color: rgba(71, 85, 105, 0.95);
-  max-width: 64ch;
+  margin-top: 50px;
 }
-
 .subjectMulti {
   min-height: 120px;
 }
@@ -713,33 +719,57 @@ if (response.data.forcePasswordChange) {
 .cta-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 18px;
-}
-.about-link {
-  color: #4f46e5;
-  font-weight: 800;
-  text-decoration: none;
-}
-.about-link:hover {
-  text-decoration: underline;
-}
-.dot {
-  color: rgba(71, 85, 105, 0.7);
+  justify-content: center;
+  gap: 14px;
+  margin-top: 20px;
+  font-size: 1rem;
+  font-weight: 500;
 }
 
+.about-link {
+  position: relative;
+  text-decoration: none;
+  color: #0864e4; /* dark slate */
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.25s ease;
+  font-weight:900;
+  font-size: 1.25rem;
+}
+
+.about-link:hover {
+  color: #ffffff;
+  background: linear-gradient(135deg, #4f46e5, #3b82f6);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.25);
+}
+
+.dot {
+  color: #9ca3af;
+  font-size: 1.2rem;
+  user-select: none;
+}
+
+/* Optional: subtle active click feel */
+.about-link:active {
+  transform: translateY(0px) scale(0.98);
+}
 /* Existing Images */
 .image-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 32px;
   margin: 18px 0;
+  padding: 0 15px;
 }
 
 .image-card {
+  width: 100%;
   background: rgba(255, 255, 255, 0.86);
   border: 1px solid rgba(15, 23, 42, 0.10);
   border-radius: 14px;
+  border-color: rgb(87, 82, 238);
+  border-width: 1px;
   padding: 10px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
 }
@@ -752,9 +782,12 @@ if (response.data.forcePasswordChange) {
 
 .media-row {
   display: flex;
+  justify-content: center;
+  align-items: stretch;
   gap: 32px;
-  align-items: flex-start;
-  margin-top: 32px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 32px auto 0;
 }
 
 /* LEFT: protect width */
@@ -763,15 +796,6 @@ if (response.data.forcePasswordChange) {
   min-width: 600px;  /* 👈 prevents shrinking too much */
 }
 
-/* RIGHT: fixed sidebar feel */
-.media-right {
-  flex: 0 0 380px;   /* 👈 fixed width */
-}
-
-/* Make sure video card fits nicely */
-.video-section {
-  margin-top: 0;
-}
 
 /* Responsive: stack on mobile */
 @media (max-width: 980px) {
@@ -858,6 +882,9 @@ if (response.data.forcePasswordChange) {
 /* ✅ Tutors section */
 .tutor-section {
   margin-top: 14px;
+  width: 100%;
+  padding: 0 25px;
+  margin-bottom: 40px;
 }
 
 .section-title {
@@ -874,17 +901,19 @@ if (response.data.forcePasswordChange) {
 
 .tutor-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
 }
 
 .tutor-card {
   display: grid;
-  grid-template-columns: 120px 1fr;
+  grid-template-columns: 90px 1fr;
   gap: 12px;
   align-items: stretch;
   background: rgba(255, 255, 255, 0.86);
   border: 1px solid rgba(15, 23, 42, 0.10);
+  border-color: rgb(87, 82, 238);
+  border-width: 1px;
   border-radius: 14px;
   padding: 10px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
@@ -965,14 +994,28 @@ if (response.data.forcePasswordChange) {
   color: rgba(79, 70, 229, 0.95);
   font-weight: 800;
 }
+.content-row {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+  padding: 0 16px;
+}
 
+.about-col {
+  width: 100%;
+  max-width: 900px;   
+ 
+  gap: 20px;
+}
 /* About cards */
 .info-card {
-  margin-top: 12px;
-  background: rgba(255, 255, 255, 0.86);
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  border-radius: 14px;
-  padding: 12px;
+  margin-top: 16px;
+  margin-left: auto;
+  margin-right: auto;
+
+  width: 100%;
+  max-width: 600px;   /* controls centring width */
 }
 
 .info-card h3 {
@@ -985,19 +1028,27 @@ if (response.data.forcePasswordChange) {
 /* Right auth section */
 .auth {
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* key fix */
   justify-content: center;
-  padding: 28px;
+  padding: 40px 20px;
+  
 }
 
 .auth-card {
   width: 100%;
-  max-width: 420px;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1px solid rgba(15, 23, 42, 0.10);
+  max-width: 520px;   /* balanced for login UX */
+  
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 18px;
-  padding: 18px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  padding: 24px;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-color: rgb(87, 82, 238);
+  border-width: 1px;
+   position: relative;
+  z-index: 5;
+   position: sticky;
+  top: 30px;
 }
 
 .auth-title {
@@ -1248,20 +1299,6 @@ kbd {
   .img {
     height: 200px;
   }
-}
-
-@media (min-width: 860px) {
-  .tutor-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.contact-card {
-  padding: 20px;
-  border-radius: 14px;
-  background: #ffffff;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-  max-width: 400px;
 }
 
 .contact-card h3 {
