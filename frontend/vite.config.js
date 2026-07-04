@@ -3,6 +3,11 @@ import vue from "@vitejs/plugin-vue";
 
 export default defineConfig({
   plugins: [vue()],
+
+  base: process.env.NODE_ENV === "production"
+    ? "/STUDENT-TUTORING-WEBSITE/"
+    : "/",
+
   server: {
     proxy: {
       "/api": {
